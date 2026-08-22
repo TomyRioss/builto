@@ -1,0 +1,247 @@
+<!DOCTYPE html><html class="scroll-smooth" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>WebArchitect AI - High-End Minimalism</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e1e3e4",
+                        "on-secondary-fixed": "#07006c",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "tertiary": "#000000",
+                        "surface-container": "#edeeef",
+                        "on-primary-container": "#848484",
+                        "tertiary-container": "#1b1b1b",
+                        "outline-variant": "#cfc4c5",
+                        "on-surface-variant": "#4c4546",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#1b1b1b",
+                        "on-secondary-fixed-variant": "#2f2ebe",
+                        "tertiary-fixed": "#e2e2e2",
+                        "secondary": "#4648d4",
+                        "background": "#f8f9fa",
+                        "surface": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#e2e2e2",
+                        "on-primary": "#ffffff",
+                        "outline": "#7e7576",
+                        "on-background": "#191c1d",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface": "#191c1d",
+                        "surface-tint": "#5e5e5e",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "inverse-surface": "#2e3132",
+                        "on-primary-fixed": "#1b1b1b",
+                        "surface-container-low": "#f3f4f5",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "on-tertiary-container": "#848484",
+                        "on-secondary-container": "#fffbff",
+                        "inverse-primary": "#c6c6c6",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-primary-fixed-variant": "#474747",
+                        "primary": "#000000",
+                        "secondary-fixed-dim": "#c0c1ff",
+                        "surface-container-high": "#e7e8e9",
+                        "surface-container-highest": "#e1e3e4",
+                        "secondary-fixed": "#e1e0ff",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#6063ee",
+                        "surface-dim": "#d9dadb",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "section-gap": "80px",
+                        "stack-sm": "8px",
+                        "unit": "4px",
+                        "container-max": "1280px",
+                        "gutter": "24px",
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "title-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "title-md": ["20px", { "lineHeight": "28px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #191c1d; }
+        .ambient-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04); }
+        .gradient-text {
+            background-image: linear-gradient(90deg, #191c1d, #6063ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+<!-- Navbar -->
+<nav class="h-16 w-full fixed top-0 z-50 bg-surface dark:bg-surface-dim border-b border-surface-container-highest dark:border-outline flex justify-between items-center px-margin-mobile md:px-margin-desktop transition-all duration-200">
+<div class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg font-black text-primary">Builto</div>
+<!-- Desktop Nav Items -->
+<div class="hidden md:flex items-center gap-stack-lg">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors tracking-widest" href="#">Features</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors tracking-widest" href="#">Pricing</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors tracking-widest" href="#">Docs</a>
+<div class="h-4 w-px bg-surface-container-highest"></div>
+<a class="font-label-caps text-label-caps text-primary hover:opacity-80 transition-opacity tracking-widest" href="#">Login</a>
+<button class="bg-primary text-on-primary font-body-sm text-body-sm px-6 py-2 rounded font-medium hover:opacity-90 transition-opacity">Get Started</button>
+</div>
+<!-- Mobile Menu Button -->
+<button class="md:hidden text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 0;">menu</span>
+</button>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-24 pb-section-gap">
+<!-- Hero Section -->
+<section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop pt-section-gap pb-32 flex flex-col items-center text-center">
+<h1 class="font-display-lg text-display-lg max-w-4xl text-primary mb-stack-lg leading-tight">Crear tu pagina web<br>con IA +&nbsp;<span class="gradient-text">desarolladores humanos.</span>
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mb-section-gap leading-relaxed">
+                Todo un equipo de profesionales disponibles en tu bolsillo</p>
+<div class="flex flex-col sm:flex-row gap-stack-md sm:gap-gutter">
+<button class="bg-secondary text-on-secondary font-body-sm text-body-sm px-8 py-4 rounded hover:bg-secondary-container transition-colors shadow-sm flex items-center justify-center gap-2 group">Empieza gratis<span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" style="font-variation-settings: &quot;FILL&quot; 0;">arrow_forward</span>
+</button>
+<button class="bg-surface-container-lowest text-primary border border-surface-container-highest font-body-sm text-body-sm px-8 py-4 rounded hover:bg-surface-container-low transition-colors flex items-center justify-center">Video demo</button>
+</div>
+<!-- Hero Image/Dashboard Preview -->
+<div class="w-full mt-section-gap rounded-xl border border-surface-container-highest overflow-hidden ambient-shadow relative bg-surface-container-lowest">
+<div class="h-12 border-b border-surface-container-highest bg-surface flex items-center px-4 gap-2">
+<div class="w-3 h-3 rounded-full bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-full bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-full bg-surface-variant"></div>
+</div>
+<div class="bg-cover bg-center w-full aspect-[16/9] md:aspect-[21/9]" data-alt="A sleek, high-fidelity UI mockup of a futuristic code editor and design workspace in light mode. The interface features crisp typography, minimalist panels, and subtle electric indigo accents indicating active AI features. Clean white and light gray surfaces create a sense of endless space and precision." style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuD6Xe_NB9ZOyIIG_pH7yMqHMSp5bw67iVUq43sZgZG-WpBbiX83dgwjZDd_nv4eYNPLcLVTn5BGqPeIEjPARaaDQK4c71GDndc_TAWVtHan1BKi0DfwsFbjb9O1XAsZMtQ_F8jGuPFrhySAIlsoP_fNml1oNv2z8SUp7GiiBEPoGqdhtnFEqZuaroSwpkxcSTu1su8IXyvAv8ZYRG8uJw3HxellomryTA2Z1JGSjCAZNOOHaXBzWbNgLw&quot;);"></div>
+</div>
+</section>
+<!-- Features Section (Bento Grid Style) -->
+<section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-section-gap">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Pillar 1 -->
+<div class="bg-surface-container-lowest border border-surface-container-highest rounded-xl p-stack-lg hover:ambient-shadow transition-shadow group flex flex-col h-full">
+<div class="w-12 h-12 rounded-full bg-[#EEF2FF] text-secondary flex items-center justify-center mb-stack-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">forum</span>
+</div>
+<h3 class="font-title-md text-title-md text-primary mb-stack-sm">Crea tu boceto con IA</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Contale a la IA que necesitas y construi tu sitio mediante una conversación simple, sin programar.</p>
+<div class="mt-auto pt-stack-lg">
+<div class="h-32 rounded border border-surface-container-highest bg-surface relative overflow-hidden flex items-end p-4">
+<!-- Decorative chat bubble -->
+<div class="bg-surface-container-lowest border border-surface-container-highest p-3 rounded-t-xl rounded-br-xl text-xs text-on-surface-variant shadow-sm w-3/4">
+                                 Generate a dashboard with a revenue chart and user table.
+                             </div>
+</div>
+</div>
+</div>
+<!-- Pillar 2 -->
+<div class="bg-surface-container-lowest border border-surface-container-highest rounded-xl p-stack-lg hover:ambient-shadow transition-shadow group flex flex-col h-full">
+<div class="w-12 h-12 rounded-full bg-surface-container text-primary flex items-center justify-center mb-stack-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 0;">engineering</span>
+</div>
+<h3 class="font-title-md text-title-md text-primary mb-stack-sm">Delega parte a un desarrollador profesional</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cuando la IA no pueda resolver algo, solicitá un desarrollador capacitado y dejá que continúe directamente sobre tu proyecto.</p>
+<div class="mt-auto pt-stack-lg">
+<div class="h-32 rounded border border-surface-container-highest bg-surface relative overflow-hidden flex flex-col justify-between p-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-on-surface-variant">api_integration.js</span>
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+</div>
+<div class="flex items-center gap-2 text-xs text-secondary bg-[#EEF2FF] px-2 py-1 rounded w-max">
+<span class="material-symbols-outlined text-[14px]">person</span>
+                                 Human expert assigned
+                             </div>
+</div>
+</div>
+</div>
+<!-- Pillar 3 -->
+<div class="bg-surface-container-lowest border border-surface-container-highest rounded-xl p-stack-lg hover:ambient-shadow transition-shadow group flex flex-col h-full">
+<div class="w-12 h-12 rounded-full bg-surface-container text-primary flex items-center justify-center mb-stack-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 0;">memory</span>
+</div>
+<h3 class="font-title-md text-title-md text-primary mb-stack-sm">Segui el proyecto en tiempo real</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Visualizá desde tu panel cómo avanza el trabajo del desarrollador y mantené el control en todo momento</p>
+<div class="mt-auto pt-stack-lg flex-grow">
+<div class="h-32 rounded border border-surface-container-highest bg-surface p-4 flex flex-col gap-2 justify-center">
+<div class="h-2 bg-surface-container-highest rounded w-full"></div>
+<div class="h-2 bg-surface-container-highest rounded w-5/6"></div>
+<div class="h-2 bg-secondary/30 rounded w-4/6 mt-2"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Value Prop Section -->
+<section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-section-gap border-y border-surface-container-highest bg-surface-container-lowest">
+<div class="flex flex-col items-center text-center">
+<h2 class="font-display-lg text-display-lg text-primary mb-stack-lg max-w-3xl">Algunas de nuestras plantillas<br><span class="text-surface-tint">Listas para usar hoy!.</span>
+</h2>
+<div class="flex flex-col md:flex-row items-center gap-stack-lg mt-stack-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings: &quot;FILL&quot; 1;">auto_awesome</span>
+<span class="font-title-md text-title-md"><span data-doc-id="1e338f92-d535-4401-a9c8-db749b2ebeb3"></span><p class="text-node"><span class="attr" data-user-id="f24a7ba2-4f0b-45e1-9cc9-940f6423600c"><strong>DeepSeek</strong></span></p></span>
+</div>
+<div class="w-px h-12 bg-surface-container-highest hidden md:block"></div>
+<div class="h-px w-12 bg-surface-container-highest block md:hidden"></div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: &quot;FILL&quot; 0;">verified_user</span>
+<span class="font-title-md text-title-md">Todas las entregas revisadas por moderadores</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA -->
+<section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-section-gap flex flex-col items-center text-center">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-stack-lg">
+                Listo para construir tu proxima idea?</h2>
+<button class="bg-primary text-on-primary font-body-sm text-body-sm px-10 py-5 rounded-lg hover:opacity-90 transition-opacity shadow-sm font-medium tracking-wide">Comenzar mi proyecto</button>
+</section>
+</main>
+<!-- Footer -->
+<footer class="border-t border-surface-container-highest bg-surface-container-lowest py-stack-lg mt-auto">
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-stack-md">
+<div class="font-label-caps text-label-caps text-on-surface-variant">© 2024 WebArchitect AI. All rights reserved.</div>
+<div class="flex gap-gutter">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Terms</a>
+</div>
+</div>
+</footer>
+
+
+</body></html>
