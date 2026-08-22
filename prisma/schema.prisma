@@ -1,0 +1,361 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- auth + roles
+
+enum Role {
+  USER
+  DEV
+  ADMIN
+  OWNER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(USER)
+  passwordHash  String? // null si entro solo por OAuth
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  projects        Project[]                 @relation("ProjectOwner")
+  ticketsOpened   Ticket[]                  @relation("TicketCreator")
+  ticketsAssigned Ticket[]                  @relation("TicketDev")
+  messages        Message[]
+  conversations   ConversationParticipant[]
+  auditLogs       AuditLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// Alta de staff (DEV | ADMIN | OWNER). Sin invite valida no se crea cuenta
+/// con rol distinto de USER.
+model Invite {
+  id          String    @id @default(cuid())
+  email       String
+  role        Role
+  token       String    @unique
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+}
+
+// ---------------------------------------------------------- proyectos y codigo
+
+enum ProjectStatus {
+  DRAFT
+  ONBOARDING
+  READY
+  ARCHIVED
+}
+
+enum AuthorKind {
+  AI
+  DEV
+  USER
+  SYSTEM
+}
+
+model Project {
+  id        String        @id @default(cuid())
+  ownerId   String
+  name      String
+  slug      String        @unique
+  status    ProjectStatus @default(DRAFT)
+  brief     Json? // salida estructurada del onboarding conversacional
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  owner         User             @relation("ProjectOwner", fields: [ownerId], references: [id])
+  files         ProjectFile[]
+  versions      ProjectVersion[]
+  assets        Asset[]
+  tickets       Ticket[]
+  conversations Conversation[]
+
+  @@index([ownerId])
+}
+
+/// Estado actual del proyecto. Es lo que lee el preview y lo que Realtime empuja
+/// fila por fila mientras la IA escribe.
+model ProjectFile {
+  id        String   @id @default(cuid())
+  projectId String
+  path      String // "app/page.tsx"
+  content   String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, path])
+}
+
+/// Snapshot congelado de un cambio: quien lo hizo (IA o dev) y cuando.
+model ProjectVersion {
+  id         String     @id @default(cuid())
+  projectId  String
+  label      String? // "agregue el carrito"
+  authorId   String?
+  authorKind AuthorKind
+  createdAt  DateTime   @default(now())
+
+  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  revisions FileRevision[]
+
+  @@index([projectId, createdAt])
+}
+
+model FileRevision {
+  id        String @id @default(cuid())
+  versionId String
+  path      String
+  content   String @db.Text
+
+  version ProjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId])
+}
+
+/// Imagenes que sube el usuario. El binario vive en Supabase Storage.
+model Asset {
+  id         String   @id @default(cuid())
+  projectId  String
+  uploaderId String
+  storageKey String
+  mimeType   String
+  size       Int
+  createdAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+// -------------------------------------------------- tickets, cotizacion, pagos
+
+enum TicketStatus {
+  PENDING
+  CLARIFYING
+  QUOTED
+  ACCEPTED
+  PAID
+  IN_PROGRESS
+  REVIEW
+  DONE
+  REJECTED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum PaymentProvider {
+  MANUAL
+  MERCADOPAGO
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Ticket {
+  id            String       @id @default(cuid())
+  projectId     String
+  createdById   String
+  assignedDevId String?
+  title         String
+  description   String       @db.Text
+  status        TicketStatus @default(PENDING)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy     User           @relation("TicketCreator", fields: [createdById], references: [id])
+  assignedDev   User?          @relation("TicketDev", fields: [assignedDevId], references: [id])
+  quotes        Quote[]
+  transactions  Transaction[]
+  conversations Conversation[]
+
+  @@index([status])
+  @@index([assignedDevId])
+  @@index([createdById])
+  @@index([projectId])
+}
+
+/// Un ticket puede recotizarse: la vigente es la ultima SENT o ACCEPTED.
+model Quote {
+  id          String      @id @default(cuid())
+  ticketId    String
+  amount      Decimal     @db.Decimal(12, 2)
+  currency    String      @default("ARS")
+  notes       String?     @db.Text
+  createdById String
+  status      QuoteStatus @default(SENT)
+  expiresAt   DateTime?
+  createdAt   DateTime    @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  ticketId    String?
+  quoteId     String?
+  userId      String
+  amount      Decimal         @db.Decimal(12, 2)
+  currency    String          @default("ARS")
+  provider    PaymentProvider @default(MANUAL)
+  providerRef String? // payment id de Mercado Pago, despues
+  status      PaymentStatus   @default(PENDING)
+  createdAt   DateTime        @default(now())
+
+  ticket Ticket? @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// -------------------------------------------------------------- conversaciones
+
+enum ConversationKind {
+  AI
+  TICKET
+  DIRECT
+}
+
+enum SenderKind {
+  USER
+  DEV
+  ADMIN
+  AI
+  SYSTEM
+}
+
+model Conversation {
+  id        String           @id @default(cuid())
+  kind      ConversationKind
+  projectId String?
+  ticketId  String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  project      Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ticket       Ticket?                   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  messages     Message[]
+  participants ConversationParticipant[]
+
+  @@index([projectId])
+  @@index([ticketId])
+}
+
+model ConversationParticipant {
+  conversationId String
+  userId         String
+  lastReadAt     DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+/// body = solo prosa. El codigo nunca entra aca: va a ProjectFile.
+/// meta = { versionId, files: [{ path, action }], model, tokens }
+model Message {
+  id             String     @id @default(cuid())
+  conversationId String
+  senderId       String? // null cuando senderKind = AI | SYSTEM
+  senderKind     SenderKind
+  body           String     @db.Text
+  meta           Json?
+  createdAt      DateTime   @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User?        @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+// ------------------------------------------------------------------- auditoria
+
+/// Historial de acciones de devs y staff (TOM-63). Se escribe desde los server
+/// actions, no desde triggers.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String // "ticket.quoted", "project.file_edited", "user.role_changed"
+  entityType String
+  entityId   String
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+}

@@ -1,0 +1,10 @@
+import { Navbar } from "../components/Navbar";
+
+export default function AppLayout(props: LayoutProps<"/dashboard">) {
+  return (
+    <div className="flex min-h-full flex-1 flex-col bg-[#f8f9fa] text-[#191c1d]">
+      <Navbar />
+      <div className="flex flex-1 flex-col md:flex-row">{props.children}</div>
+    </div>
+  );
+}
