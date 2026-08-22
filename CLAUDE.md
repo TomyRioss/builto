@@ -36,6 +36,16 @@ Todo error se catchea. Sin excepción. Cada catch debe producir:
 - **Nunca** tocar `global.css`.
 - Tokens de color, tipografía, radios y spacing: los de `DESIGN.md` (paleta Monolith Ultra). No inventar colores.
 
+## 3.1 Tipografía y espacio
+
+- Fuente única: **Inter**, siempre. Fallback en este orden exacto:
+  `Inter, Helvetica, "Open Sans", Roboto, Verdana, Georgia, sans-serif`.
+  No introducir otras familias ni pares de fuentes.
+- **Jerarquía clara**: el contraste se hace con peso y escala, nunca con color. Escala y pesos: los de `DESIGN.md` (`display-lg`, `headline-lg`, `title-md`, `body-lg`, `body-sm`, `label-caps`). No inventar tamaños intermedios.
+- Títulos: `font-semibold`, letter-spacing negativo (`-0.01em` / `-0.02em`). Cuerpo: `font-normal`. Labels chicos: mayúsculas con `tracking-[0.05em]`.
+- Cuerpo de texto entre 65 y 75 caracteres por línea como máximo.
+- **Interfaz con mucho aire**: espaciado múltiplo de 4px, gap de 80px entre bloques mayores, márgenes 40px en desktop y 16px en mobile. Ante la duda, más espacio y menos elementos. El vacío es parte del diseño, no espacio a rellenar.
+
 ## 4. Componentes
 
 - shadcn/ui para todo componente prefabricado general (button, dialog, input, select, table, etc.). No escribir a mano lo que shadcn ya provee.

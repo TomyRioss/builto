@@ -9,10 +9,12 @@ import {
   LuChevronRight,
   LuMessageSquare,
   LuSettings,
+  LuTicket,
 } from "react-icons/lu";
 
 const items = [
   { label: "Co-Build", href: "/dashboard/builder", Icon: LuBlocks },
+  { label: "Tickets", href: "/dashboard/tickets", Icon: LuTicket },
   { label: "Mensajes", href: "/dashboard/messages", Icon: LuMessageSquare },
   { label: "Configuracion", href: "/dashboard/config", Icon: LuSettings },
 ];
