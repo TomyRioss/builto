@@ -1,0 +1,3 @@
+export default function DeveloperTicketsLoading() {
+  return <div className="mx-auto w-full max-w-[1280px] animate-pulse px-4 py-8 sm:px-6 lg:px-10 lg:py-10" aria-busy="true" aria-label="Cargando tickets"><div className="h-4 w-32 rounded bg-[#e1e3e4]" /><div className="mt-3 h-10 w-64 rounded bg-[#d9dadb]" /><div className="mt-3 h-5 w-[30rem] max-w-full rounded bg-[#eceeef]" /><div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <div key={index} className="h-36 rounded-lg border border-[#e1e3e4] bg-[#f8f9fa]" />)}</div><div className="mt-8 h-20 border-y border-[#e1e3e4] bg-[#f8f9fa]" /><div className="mt-7 h-80 rounded-lg border border-[#e1e3e4] bg-[#f8f9fa]" /></div>;
+}

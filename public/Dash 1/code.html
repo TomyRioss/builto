@@ -1,0 +1,336 @@
+<!DOCTYPE html><html class="h-full" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Dashboard - WebArchitect AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#1b1b1b",
+                    "tertiary": "#000000",
+                    "surface-container-highest": "#e1e3e4",
+                    "error-container": "#ffdad6",
+                    "primary-fixed": "#e2e2e2",
+                    "on-surface-variant": "#4c4546",
+                    "surface-dim": "#d9dadb",
+                    "outline": "#7e7576",
+                    "error": "#ba1a1a",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-container": "#fffbff",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f3f4f5",
+                    "surface-variant": "#e1e3e4",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#1b1b1b",
+                    "on-background": "#191c1d",
+                    "secondary-fixed-dim": "#c0c1ff",
+                    "on-tertiary-container": "#848484",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "inverse-on-surface": "#f0f1f2",
+                    "on-secondary-fixed": "#07006c",
+                    "background": "#f8f9fa",
+                    "on-primary-container": "#848484",
+                    "primary-container": "#1b1b1b",
+                    "tertiary-fixed": "#e2e2e2",
+                    "primary": "#000000",
+                    "surface-bright": "#f8f9fa",
+                    "inverse-primary": "#c6c6c6",
+                    "on-secondary": "#ffffff",
+                    "surface": "#f8f9fa",
+                    "surface-tint": "#5e5e5e",
+                    "on-surface": "#191c1d",
+                    "on-primary-fixed-variant": "#474747",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#edeeef",
+                    "on-secondary-fixed-variant": "#2f2ebe",
+                    "inverse-surface": "#2e3132",
+                    "on-primary-fixed": "#1b1b1b",
+                    "primary-fixed-dim": "#c6c6c6",
+                    "secondary-fixed": "#e1e0ff",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#c6c6c6",
+                    "secondary-container": "#6063ee",
+                    "outline-variant": "#cfc4c5",
+                    "secondary": "#4648d4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "stack-md": "16px",
+                    "stack-sm": "8px",
+                    "gutter": "24px",
+                    "container-max": "1280px",
+                    "section-gap": "80px",
+                    "stack-lg": "32px",
+                    "unit": "4px",
+                    "margin-desktop": "40px"
+            },
+            "fontFamily": {
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "title-md": ["Inter"]
+            },
+            "fontSize": {
+                    "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-md": ["20px", {"lineHeight": "28px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* High-end minimalist scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e1e3e4; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cfc4c5; }
+    </style>
+</head>
+<body class="bg-background text-on-background h-full font-body-lg flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="w-64 h-screen fixed left-0 top-0 bg-background border-r border-surface-container-highest flex flex-col h-full py-stack-lg px-margin-mobile z-40 hidden md:flex">
+<!-- Brand -->
+<div class="mb-stack-lg px-3">
+<h1 class="font-title-md text-title-md font-bold text-primary">BUILTO</h1>
+
+</div>
+<!-- Navigation Tabs -->
+<ul class="flex-1 space-y-1">
+<!-- Active Tab: Projects -->
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary font-bold bg-surface-container-low transition-colors duration-200 ease-in-out border-r-2 border-secondary group" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="folder_open" data-weight="fill">folder_open</span>
+<span class="font-body-sm text-body-sm">Proyectos</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-body-sm text-body-sm group-hover:font-medium">Construir con IA</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200 ease-in-out group" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-body-sm text-body-sm group-hover:font-medium">Ticket</span></a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200 ease-in-out group" href="#">
+<img src="https://lh3.googleusercontent.com/aida/AEtjO1VdBzNlqEJ2ZyBllLzw7Cv10xREsp-poLxhtjvsKmZ0A3m_nL76ISFOHibmi__e2L_hwXtDwOooXBU39MYTiVhgiAgXYgKPJqt4iGp1DhjkKqSVkpyioBNwozgTd7q8xUE7oSz0W8dWtlqbbVmi8_1prfHGEoNXHoUgFX0sEg3jlNMafCn_3f5K2U-H9UzSyxpcPAByEas-m49ADzyCP3sJd7knutKOytgDZ7j1wnapli3E9s3IzohKQ3I" alt="Icono Seguimiento Personalizado" class="w-[20px] h-[20px] shrink-0">
+<span class="font-body-sm text-body-sm group-hover:font-medium">Seguimiento</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span class="font-body-sm text-body-sm group-hover:font-medium">Settings</span>
+</a>
+</li>
+</ul>
+<!-- Footer / CTA -->
+<div class="mt-auto space-y-4 pt-4 border-t border-surface-container-highest">
+<button class="w-full flex justify-center items-center gap-2 bg-primary text-on-primary py-2.5 rounded-lg font-body-sm text-body-sm font-medium hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                Nuevo proyecto</button>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="help_outline">help_outline</span>
+<span class="font-body-sm text-body-sm">Soporte</span>
+</a>
+<!-- User Avatar (Minimal) -->
+<div class="flex items-center gap-3 px-3 py-2 mt-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden shrink-0">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A highly professional, minimalist portrait of a modern software developer or designer, shot in a high-key light mode aesthetic. The background is pure white or very light gray. The lighting is soft, even, and flattering, creating a serene and premium feel appropriate for a high-end SaaS avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYhHFzFrYZ786RzxO0SQPImeoSeXUnD3uNSJWuQjmf-c-4VdXbMwDIzjtPXeygd8TNtp3R7vJqX84zbug4eV20lRhUs3_PWXqGYKEhwp7dO4HrPeUmaTomILESCttWverzkTEtQttHL8eYVDwSNER1h5n8Fl3TVr_iIG2pMZ-5lC_LhRtbSLOE-f2mu0m3Kg3O1L-kMms2kyW8sJMshqjwkNejZ776jTMTKv0aE0PPuYB96oELmdvvxw">
+</div>
+<div class="flex flex-col overflow-hidden">
+<span class="font-body-sm text-body-sm font-medium text-primary truncate">Nombre de usuario</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant truncate lowercase">alex@workspace.ai</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 h-screen overflow-y-auto bg-surface-container-lowest">
+<!-- Mobile Header (Visible only on small screens) -->
+<header class="md:hidden flex justify-between items-center px-margin-mobile h-16 border-b border-surface-container-highest bg-surface-container-lowest sticky top-0 z-30">
+<h1 class="font-title-md text-title-md font-bold text-primary">WebArchitect AI</h1>
+<button class="p-2 text-on-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg md:py-margin-desktop">
+<!-- Welcome Header -->
+<header class="mb-section-gap flex flex-col md:flex-row md:items-end justify-between gap-stack-lg">
+<div>
+<h2 class="font-display-lg text-display-lg text-primary tracking-tight">Bienvenido, [Nombre usuario].</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2 max-w-2xl">Aquí tienes una vista previa de tu espacio de trabajo. Tienes [X] tareas pendientes en desarrollo humano.</p>
+</div>
+<div class="flex items-center gap-4">
+<button class="h-10 w-10 rounded-full border border-surface-container-highest flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Dashboard Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Projects -->
+<div class="lg:col-span-8 space-y-section-gap">
+<!-- Top Action Row -->
+<section>
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-title-md text-title-md text-primary">Acciones</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Create New Project Card (Accent) -->
+<button class="group flex flex-col justify-between items-start text-left p-6 h-40 bg-secondary-container rounded-xl border border-transparent hover:opacity-95 transition-all">
+<div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-on-secondary-container" data-icon="add" data-weight="fill">add</span>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg font-medium text-on-secondary-container">Crear nuevo proyecto</h4>
+<p class="font-body-sm text-body-sm text-on-secondary-container/80 mt-1">Empieza un nuevo chat con la IA.</p>
+</div>
+</button>
+<!-- Template Library Card -->
+<button class="group flex flex-col justify-between items-start text-left p-6 h-40 bg-surface-container-lowest rounded-xl border border-surface-container-highest hover:border-outline transition-all">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center mb-4 group-hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="dashboard_customize">dashboard_customize</span>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg font-medium text-primary">Libreria de plantillas</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Pre construcciones listas para utilizar</p>
+</div>
+</button>
+</div>
+</section>
+<!-- Recent Projects Grid -->
+<section>
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-title-md text-title-md text-primary">Proyectos recietes</h3>
+<a class="font-body-sm text-body-sm text-secondary hover:underline flex items-center gap-1" href="#">
+                                View all <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Project Card 1 (Draft) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl border border-surface-container-highest overflow-hidden hover:border-outline transition-all hover:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.04)]">
+<div class="h-40 w-full bg-surface-container-low relative border-b border-surface-container-highest">
+<img alt="Project Thumbnail" class="w-full h-full object-cover" data-alt="A minimalist, wireframe-style representation of a modern SaaS dashboard. The design uses very light gray and white tones, showcasing structural elements like a sidebar and chart placeholders without detailed content. High-key lighting, ultra-clean aesthetic, geometric precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA04LpbAHgHM9B9EMZmTe1FbYGcaZKPglDr90raB0hdrQfceKfOIimPscUl50x-96v1Py00_ZBH8STDbUiP0tA4ijyOZzCBcoGwlkolmm6ky4sB93dCMZQd9Ea7DS4zYrN7bp6jATpBSyj7cYSvnCn2zcC6yPem2J6TrM2bXHBaKkF-Az9edPfHaDOsoLBdII0DoPOmdAo2h_lSb5pdTmvCLGPfiQi9xGnTaA5Ra4fOyQA4JrYDq-ptMg">
+<div class="absolute top-3 right-3">
+<span class="inline-flex items-center px-2 py-1 rounded bg-surface-container-highest text-primary font-label-caps text-label-caps">
+                                            Draft
+                                        </span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<h4 class="font-body-lg text-body-lg font-medium text-primary group-hover:text-secondary transition-colors">FinTech Dashboard UI</h4>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Last edited 2h ago</p>
+</div>
+</div>
+<!-- Project Card 2 (Human Review) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl border border-surface-container-highest overflow-hidden hover:border-outline transition-all hover:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.04)]">
+<div class="h-40 w-full bg-surface-container-low relative border-b border-surface-container-highest">
+<img alt="Project Thumbnail" class="w-full h-full object-cover" data-alt="A clean, minimalist visual representation of an e-commerce product page layout. The design features soft, muted colors, plenty of whitespace, and simple rectangular shapes representing images and text blocks. High-key, premium light mode aesthetic, abstract wireframe style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBf7Au0Jlv959VV4HcQMtm5xOWwxXZN1l3lE2jzkaUgYr4ccvbMw8N9I4DXio5hntaGPy3JR_ojBGK9Fr5bEWmdTsO9mjE2RJxSU2srSBfHRWb6qpTU6MFsgnk6mG75__kyYviOu_hIynWlMsoBY9Wk2bQxrEUKJD_z3CpmsWeBLiqXErfhdTlNe7UL3gHqRR5021xeBdhezf7JtZ6uaLS-OeDzRewU48wOEMTKIEjQ1hIqECOYFAPVWg">
+<div class="absolute top-3 right-3">
+<span class="inline-flex items-center px-2 py-1 rounded bg-[#EEF2FF] text-secondary font-label-caps text-label-caps border border-[#c0c1ff]">
+<span class="material-symbols-outlined text-[12px] mr-1">person_search</span>
+                                            Review
+                                        </span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<h4 class="font-body-lg text-body-lg font-medium text-primary group-hover:text-secondary transition-colors">Retail Storefront</h4>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Awaiting your approval</p>
+</div>
+</div>
+<!-- Project Card 3 (Live) -->
+<div class="group flex flex-col bg-surface-container-lowest rounded-xl border border-surface-container-highest overflow-hidden hover:border-outline transition-all hover:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.04)]">
+<div class="h-40 w-full bg-surface-container-low relative border-b border-surface-container-highest">
+<img alt="Project Thumbnail" class="w-full h-full object-cover grayscale opacity-80" data-alt="A sophisticated, minimalist landing page layout shown as an abstract digital design file. The composition uses pure whites, soft grays, and subtle geometric overlays. High-end software interface aesthetic, clean lines, and stark contrast." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfZwnMCyqmQVBh42JUepQmn3FYoP2c1YTrsxaNgLqRxLpXAtGGDG3tGN8y6aT6XLl1jzjK2bl-zCEApXLOMda9qW3GKVikQaK5leQu5TS3vao8mD60n8ZmCRLsOvpn_7b583aKl4VwFFyIeJ7IYrkxw_G18xOfDiVqbtIrh8A3F43JTcwadORkO4ym3c5COdO_gBH6NGTNAdvd-dlUAiy0EoHZH1zE8lnyLTF-vci8Fi-IuDiZdYqyCg">
+<div class="absolute top-3 right-3">
+<span class="inline-flex items-center px-2 py-1 rounded bg-surface-container-highest text-primary font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mr-1.5"></span>
+                                            Live
+                                        </span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<h4 class="font-body-lg text-body-lg font-medium text-primary group-hover:text-secondary transition-colors">Marketing Site V2</h4>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Published 2 days ago</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Activity Feed -->
+<div class="lg:col-span-4 mt-section-gap lg:mt-0">
+<aside class="sticky top-margin-desktop h-[calc(100vh-80px)] flex flex-col">
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-title-md text-title-md text-primary">Activity</h3>
+<button class="p-1 text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+</div>
+<div class="flex-1 bg-surface-container-lowest rounded-xl border border-surface-container-highest overflow-hidden flex flex-col">
+<ul class="flex-1 overflow-y-auto divide-y divide-surface-container-highest">
+<!-- Activity Item (AI) -->
+
+<!-- Activity Item (Human) -->
+<li class="p-4 hover:bg-surface-container-low transition-colors">
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden shrink-0">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A highly professional, minimalist portrait of a modern software developer or designer, shot in a high-key light mode aesthetic. The background is pure white or very light gray." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAN9EvAYnQtRe1YugMIWyd5YKS9y59j64Lxv8fZIMam9deKP8GyFBW3n1ztQu5qiaeUGeHAqNvgPVTf__3xPeeycCKtHMG04GT_kIvOj5R-3t0LKVCvh7mVT_gG6Eq9B5JhyhEi-Nk_G-7Ko94ok0t4StAPRx_SP49impFyy_af57ck0EywrsNcEGOvFojtucdi6egn9Jc7GQHg9jNpW0qyj39F9FlB9KQZkTyDs67fK3PEiZozMkdiQ">
+</div>
+<div>
+<p class="font-body-sm text-body-sm text-primary leading-snug">DEV [ Nombre DEV ] a subido los cambios del Ticket [ Nombre Ticket ]</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant mt-2">2 days ago</p>
+</div>
+</div>
+</li>
+<!-- Activity Item (System) -->
+
+</ul>
+</div>
+</aside>
+</div>
+</div>
+<div class="h-margin-desktop"></div> <!-- Bottom padding -->
+</div>
+</main>
+
+</body></html>
