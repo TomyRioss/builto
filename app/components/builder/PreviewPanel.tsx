@@ -12,9 +12,11 @@ import { LuCode, LuDownload, LuEye, LuLoader, LuPlus, LuUpload, LuX } from "reac
 import { toast } from "sonner";
 import type { SandpackError } from "@codesandbox/sandpack-client";
 
-import { saveProjectFile, saveProjectThumbnail } from "@/app/dashboard/builder/actions";
+import { importProjectFiles, saveProjectFile, saveProjectThumbnail } from "@/app/dashboard/builder/actions";
 import { NewTicketDialog } from "@/app/components/tickets/NewTicketDialog";
+import { normalizePath } from "@/lib/builder/protocol";
 import {
+  ENTRY_FILE,
   HIDDEN_FILES,
 } from "@/lib/builder/template";
 

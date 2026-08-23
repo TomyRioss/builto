@@ -20,14 +20,16 @@ const PreviewPanel = dynamic(
 
 type Props = {
   projectId: string;
+  projectName: string;
   initialFiles: Record<string, string>;
 };
 
-export function DeveloperWorkspace({ projectId, initialFiles }: Props) {
+export function DeveloperWorkspace({ projectId, projectName, initialFiles }: Props) {
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden border-t border-[#d9dadb]">
       <PreviewPanel
         projectId={projectId}
+        projectName={projectName}
         files={initialFiles}
         writingPath={null}
         isStreaming={false}

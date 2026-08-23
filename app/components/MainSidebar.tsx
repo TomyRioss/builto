@@ -7,7 +7,6 @@ import {
   LuBlocks,
   LuChevronLeft,
   LuChevronRight,
-  LuFileText,
   LuCircleHelp,
   LuHouse,
   LuMessageSquare,
@@ -20,7 +19,6 @@ const items = [
   { label: "Inicio", href: "/dashboard", Icon: LuHouse, exact: true },
   { label: "Construir con IA", href: "/dashboard/builder", Icon: LuBlocks },
   { label: "Tickets", href: "/dashboard/tickets", Icon: LuTicket },
-  { label: "Cotizaciones", href: "/dashboard/quotes", Icon: LuFileText },
   { label: "Mensajes", href: "/dashboard/messages", Icon: LuMessageSquare },
   { label: "Configuracion", href: "/dashboard/config", Icon: LuSettings },
 ];

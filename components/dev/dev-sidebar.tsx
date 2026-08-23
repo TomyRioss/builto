@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -43,7 +44,15 @@ function SidebarContent({ name, email, initials, onNavigate }: DevSidebarProps &
       <div className="border-t border-[#e1e3e4] p-4">
         <div className="flex items-center gap-3 px-3 py-2">
           <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full bg-[#e1e3e4] text-[0.68rem] font-semibold text-black">{initials}</span>
-          <div className="min-w-0"><p className="truncate text-sm font-medium text-black">{name}</p><p className="truncate text-xs text-[#666768]">{email}</p></div>
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-black">{name}</p><p className="truncate text-xs text-[#666768]">{email}</p></div>
+          <button
+            type="button"
+            onClick={() => signOut({ redirectTo: "/" })}
+            className="grid size-8 shrink-0 place-items-center rounded-md text-[#666768] hover:bg-[#e1e3e4] hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4648d4]"
+          >
+            <LogOut aria-hidden="true" className="size-4" />
+            <span className="sr-only">Cerrar sesión</span>
+          </button>
         </div>
       </div>
     </div>
