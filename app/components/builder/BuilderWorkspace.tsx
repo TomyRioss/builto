@@ -1,27 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
 import { LuCode, LuMessageSquare } from "react-icons/lu";
 
 import { ChatPanel } from "./ChatPanel";
+import { useBuilderPreview } from "./BuilderPreviewHost";
 import { useBuilderStream, type ChatEntry } from "./useBuilderStream";
-
-// Sandpack levanta un iframe y toca window al montar: no tiene nada que hacer
-// en el render del server.
-const PreviewPanel = dynamic(() => import("./PreviewPanel"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 bg-[#f8f9fa] px-6 text-center">
-      <p className="text-sm font-medium text-[#4c4546]">Preparando el preview</p>
-      {/* El arranque en frio instala las dependencias de verdad: ~1 minuto. */}
-      <p className="max-w-[40ch] text-sm text-[#7e7576]">
-        Instalando las dependencias del proyecto. La primera vez tarda cerca de
-        un minuto.
-      </p>
-    </div>
-  ),
-});
 
 type Props = {
   conversationId: string;
@@ -37,9 +21,17 @@ export function BuilderWorkspace({
   initialFiles,
 }: Props) {
   const [mobilePane, setMobilePane] = useState<"chat" | "preview">("chat");
+  const previewSlotRef = useRef<HTMLDivElement>(null);
 
   const { messages, files, streamingProse, writingPath, isStreaming, send } =
     useBuilderStream({ conversationId, initialMessages, initialFiles });
+
+  const setPortalTarget = useBuilderPreview({ projectId, files, writingPath, isStreaming });
+
+  useEffect(() => {
+    setPortalTarget(previewSlotRef.current);
+    return () => setPortalTarget(null);
+  }, [setPortalTarget]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -75,17 +67,11 @@ export function BuilderWorkspace({
         </div>
 
         <div
+          ref={previewSlotRef}
           className={`min-h-0 flex-1 ${
             mobilePane === "preview" ? "flex" : "hidden md:flex"
           }`}
-        >
-          <PreviewPanel
-            projectId={projectId}
-            files={files}
-            writingPath={writingPath}
-            isStreaming={isStreaming}
-          />
-        </div>
+        />
       </div>
     </div>
   );
