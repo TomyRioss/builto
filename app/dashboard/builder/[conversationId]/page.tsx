@@ -22,6 +22,7 @@ export default async function BuilderConversationPage(
     <BuilderWorkspace
       conversationId={conversation.id}
       projectId={conversation.project.id}
+      projectName={conversation.project.name}
       initialMessages={conversation.messages
         .filter((message) => message.senderKind === "USER" || message.senderKind === "AI")
         .map((message) => ({

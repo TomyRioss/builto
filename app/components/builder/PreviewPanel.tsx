@@ -6,19 +6,16 @@ import {
   SandpackFileExplorer,
   SandpackLayout,
   SandpackPreview,
-  SandpackProvider,
   useSandpack,
 } from "@codesandbox/sandpack-react";
 import { LuCode, LuDownload, LuEye, LuLoader } from "react-icons/lu";
 import { toast } from "sonner";
+import type { SandpackError } from "@codesandbox/sandpack-client";
 
 import { saveProjectFile, saveProjectThumbnail } from "@/app/dashboard/builder/actions";
+import { NewTicketDialog } from "@/app/components/tickets/NewTicketDialog";
 import {
-  ENTRY_FILE,
   HIDDEN_FILES,
-  SANDBOX_ENTRY,
-  SANDBOX_ENVIRONMENT,
-  SANDBOX_TEMPLATE,
 } from "@/lib/builder/template";
 
 const SAVE_DEBOUNCE_MS = 800;
@@ -41,13 +38,44 @@ const LOADING_MESSAGES = [
   "Alineando los divs",
   "Silenciando warnings de TypeScript",
   "Centrando un div (dificil, ya sabemos)",
+  "Buscando por que funciona en mi maquina",
+  "Desenredando el spaghetti de CSS",
+  "Preguntandole a Stack Overflow",
+  "Esperando que nadie toque producción",
+  "Haciendo las paces con las dependencias",
+  "Persiguiendo un pixel rebelde",
+  "Convenciendo al responsive de cooperar",
+  "Traduciendo diseño a componentes",
+  "Revisando que el botón haga algo",
+  "Quitando el console.log de prueba",
+  "Contando divs innecesarios",
+  "Acomodando el caos con flexbox",
+  "Dándole café al servidor",
+  "Buscando el cierre de la etiqueta",
+  "Haciendo que todo entre en mobile",
+  "Negociando con los márgenes",
+  "Poniendo los píxeles en fila",
+  "Validando que no sea otro z-index",
+  "Casi listo, no muevas nada",
 ];
 
 const MESSAGE_INTERVAL_MS = 2200;
 const DOT_INTERVAL_MS = 450;
 
+/** Caras de un cubo 3D: cada una es la cara de un cubo de 72px desplazada/rotada desde el centro. */
+const CUBE_HALF = "36px";
+const CUBE_FACES = [
+  { transform: `rotateY(0deg) translateZ(${CUBE_HALF})` }, // front
+  { transform: `rotateY(180deg) translateZ(${CUBE_HALF})` }, // back
+  { transform: `rotateY(90deg) translateZ(${CUBE_HALF})` }, // right
+  { transform: `rotateY(-90deg) translateZ(${CUBE_HALF})` }, // left
+  { transform: `rotateX(90deg) translateZ(${CUBE_HALF})` }, // top
+  { transform: `rotateX(-90deg) translateZ(${CUBE_HALF})` }, // bottom
+];
+
 type Props = {
   projectId: string;
+  projectName: string;
   files: Record<string, string>;
   writingPath: string | null;
   isStreaming: boolean;
@@ -61,6 +89,7 @@ const RERUN_FALLBACK_MS = 2000;
 
 export default function PreviewPanel({
   projectId,
+  projectName,
   files,
   writingPath,
   isStreaming,
@@ -69,25 +98,12 @@ export default function PreviewPanel({
 
   useThumbnailCapture(projectId);
 
-  // Sandpack resetea el sandbox entero (y con Nodebox eso es `npm install` de
-  // nuevo, ~1 min en blanco) cada vez que cambia la IDENTIDAD de `files`,
-  // `customSetup` u `options` — ver useFiles en sandpack-react. Por eso se
-  // monta una sola vez con el snapshot inicial y props congeladas; lo que
-  // escribe la IA despues entra en caliente por updateFile (FileSync).
-  const [mountFiles] = useState(files);
-  const [mountSetup] = useState(() => ({
-    environment: SANDBOX_ENVIRONMENT,
-    entry: SANDBOX_ENTRY,
-  }));
-  const [mountOptions] = useState(() => ({
-    activeFile: ENTRY_FILE,
-    visibleFiles: visibleFiles(files),
-    // Nodebox corre npm install de verdad: en frio son ~50s.
-    bundlerTimeOut: 240_000,
-  }));
-
   const previewScopeRef = useRef<HTMLDivElement>(null);
-  const bundlerLoading = useBundlerLoading(previewScopeRef);
+  const { sandpack } = useSandpack();
+  useBundlerLoading(sandpack.status, projectId);
+  const previewReady = usePreviewReady();
+  const showPreviewLoading =
+    !previewReady && sandpack.status !== "timeout" && !sandpack.error;
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#f8f9fa]">
@@ -99,6 +115,10 @@ export default function PreviewPanel({
           Codigo
         </TabButton>
 
+        <NewTicketDialog
+          projects={[{ id: projectId, name: projectName, thumbnail: null }]}
+        />
+
         {writingPath && (
           <span className="ml-auto flex items-center gap-2 text-xs font-medium text-[#4648d4]">
             <LuLoader className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden />
@@ -108,52 +128,41 @@ export default function PreviewPanel({
       </header>
 
       {/*
-        Tailwind no llega acá: el cubo y el overlay de carga son markup
-        interno de Sandpack (clases sp-*), no algo que nosotros escribimos.
-        Se agranda, centra y le tapamos el resto del contenido con un
-        override scopeado a este panel, no a global.css.
+        Sandpack solo muestra su propio cubo cuando sandpack.status === "running";
+        durante "initial" (la mayor parte del npm install) su overlay queda oculto.
+        Por eso dibujamos nuestro propio cubo en BundlerLoadingText en vez de
+        depender del markup interno (clases sp-*) de Sandpack.
       */}
       <style jsx global>{`
-        .sandpack-preview-scope .sp-loading {
-          background: rgba(248, 249, 250, 0.82) !important;
-          backdrop-filter: blur(10px);
-        }
-        .sandpack-preview-scope .sp-loading > *:not(.sp-cube-wrapper) {
-          display: none !important;
-        }
-        .sandpack-preview-scope .sp-cube-wrapper {
-          right: auto !important;
-          bottom: auto !important;
-          top: var(--cube-center-top) !important;
-          left: 50% !important;
-          width: auto !important;
-          height: auto !important;
-          transform: translate(-50%, -50%) !important;
-        }
-        .sandpack-preview-scope .sp-cube {
-          transform: scale(0.95, 0.95) !important;
+        @keyframes preview-cube-spin {
+          from {
+            transform: rotateX(-25deg) rotateY(0deg);
+          }
+          to {
+            transform: rotateX(-25deg) rotateY(360deg);
+          }
         }
       `}</style>
 
       <div
         ref={previewScopeRef}
-        className="sandpack-preview-scope relative min-h-0 flex-1"
-        style={{ "--cube-center-top": "42%" } as React.CSSProperties}
+        className={`sandpack-preview-scope relative min-h-0 flex-1 ${
+          previewReady ? "preview-ready" : ""
+        }`}
       >
-        {bundlerLoading && <BundlerLoadingText />}
-
-        <SandpackProvider
-          template={SANDBOX_TEMPLATE}
-          files={mountFiles}
-          customSetup={mountSetup}
-          options={mountOptions}
-          style={{ height: "100%" }}
-        >
-          <FileSync
-            projectId={projectId}
-            externalFiles={files}
-            isStreaming={isStreaming}
+        {isStreaming && (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-[80] h-0.5 origin-left bg-[#6063ee] shadow-[0_0_10px_rgba(96,99,238,0.7)] motion-safe:animate-[preview-progress_1.4s_ease-in-out_infinite]"
+            role="progressbar"
+            aria-label="Generando preview"
           />
+        )}
+        {showPreviewLoading && <BundlerLoadingText />}
+        {sandpack.error && !showPreviewLoading && (
+          <PreviewError error={sandpack.error} onRetry={sandpack.runSandpack} />
+        )}
+
+        <FileSync projectId={projectId} externalFiles={files} isStreaming={isStreaming} />
 
           <SandpackLayout
             style={{
@@ -185,8 +194,8 @@ export default function PreviewPanel({
               closableTabs
               style={{ height: "100%", display: tab === "code" ? "flex" : "none" }}
             />
-          </SandpackLayout>
-        </SandpackProvider>
+        </SandpackLayout>
+
       </div>
     </section>
   );
@@ -246,22 +255,44 @@ function ExportCodeButton() {
  * overlay `.sp-loading` se monta y desmonta solo mientras dura. Observamos
  * el DOM en vez de pelear con su estado interno.
  */
-function useBundlerLoading(scopeRef: React.RefObject<HTMLDivElement | null>) {
-  const [loading, setLoading] = useState(false);
+function useBundlerLoading(status: string, projectId: string) {
+  const loading = status === "initial" || status === "running";
+  const startedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const root = scopeRef.current;
-    if (!root) return;
+    if (loading && startedAtRef.current === null) {
+      startedAtRef.current = performance.now();
+    }
 
-    const check = () => setLoading(root.querySelector(".sp-loading") !== null);
-    check();
-
-    const observer = new MutationObserver(check);
-    observer.observe(root, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [scopeRef]);
+    if (!loading && startedAtRef.current !== null) {
+      console.info("[builder] bundler listo", {
+        projectId,
+        status,
+        durationMs: Math.round(performance.now() - startedAtRef.current),
+      });
+      startedAtRef.current = null;
+    }
+  }, [loading, projectId, status]);
 
   return loading;
+}
+
+function usePreviewReady() {
+  const { sandpack, listen } = useSandpack();
+  const [ready, setReady] = useState(sandpack.status === "done");
+
+  useEffect(() => {
+    const unsubscribe = listen((message) => {
+      if (message.type === "start" && message.firstLoad) setReady(false);
+      if (message.type === "done" && message.compilatonError === false) setReady(true);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [listen, sandpack.status]);
+
+  return ready;
 }
 
 /** Texto grande sobre el cubo: rotula el mensaje cada tanto, puntos suspensivos animados. */
@@ -287,17 +318,64 @@ function BundlerLoadingText() {
 
   return (
     <div
-      className="pointer-events-none absolute z-[70]"
-      style={{
-        top: "calc(var(--cube-center-top) + 130px)",
-        left: "50%",
-        transform: "translateX(calc(-50% + 56px))",
-      }}
+      className="pointer-events-none absolute inset-0 z-[70] flex flex-col items-center justify-center gap-4"
+      style={{ background: "rgba(248, 249, 250, 0.82)", backdropFilter: "blur(10px)" }}
     >
+      <div className="size-[72px]" style={{ perspective: "360px" }} aria-hidden>
+        <div
+          className="relative size-full"
+          style={{
+            transformStyle: "preserve-3d",
+            animation: "preview-cube-spin 2.4s linear infinite",
+          }}
+        >
+          {CUBE_FACES.map(({ transform }, i) => (
+            <div
+              key={i}
+              className="absolute inset-0 border border-[#4648d4] bg-[#eef2ff]"
+              style={{ transform }}
+            />
+          ))}
+        </div>
+      </div>
       <p className="whitespace-nowrap text-center text-xl font-semibold tracking-[-0.01em] text-[#191c1d]">
         {LOADING_MESSAGES[messageIndex]}
         <span className="inline-block w-6 text-left">{".".repeat(dotCount)}</span>
       </p>
+    </div>
+  );
+}
+
+function PreviewError({ error, onRetry }: { error: SandpackError; onRetry: () => Promise<void> }) {
+  const [retrying, setRetrying] = useState(false);
+
+  async function retry() {
+    setRetrying(true);
+    try {
+      await onRetry();
+    } finally {
+      setRetrying(false);
+    }
+  }
+
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-[75] flex items-center justify-center bg-[#f8f9fa]/95 p-6">
+      <div className="w-full max-w-lg rounded-xl border border-[#e8caca] bg-white p-6 shadow-[0_18px_45px_-28px_rgba(127,29,29,0.45)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#b42318]">No se pudo renderizar</p>
+        <h2 className="mt-2 text-lg font-semibold text-[#191c1d]">Hay un error en el código generado</h2>
+        <p className="mt-3 break-words font-mono text-xs leading-5 text-[#6b4b4b]">
+          {error.path ? `${error.path}${error.line ? `:${error.line}` : ""}` : "Preview"}
+          {error.message ? `: ${error.message}` : ""}
+        </p>
+        <button
+          type="button"
+          onClick={retry}
+          disabled={retrying}
+          className="mt-5 rounded-md bg-[#4648d4] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3537b8] disabled:cursor-progress disabled:opacity-60"
+        >
+          {retrying ? "Recompilando..." : "Reintentar preview"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -386,7 +464,10 @@ function FileSync({
   // el prop `files` del provider reinicia el sandbox entero (npm install de
   // nuevo, preview en blanco); updateFile solo re-bundlea lo que cambio.
   const sandpackRef = useRef(sandpack);
-  sandpackRef.current = sandpack;
+
+  useEffect(() => {
+    sandpackRef.current = sandpack;
+  }, [sandpack]);
 
   /**
    * Recompilacion pendiente.
@@ -410,10 +491,24 @@ function FileSync({
       rerunTimerRef.current = null;
     }
 
-    sandpackRef.current.runSandpack().catch((error) => {
-      console.error("[builder] no se pudo recompilar el sandbox", { projectId, error });
-      toast.error("El preview quedo desactualizado. Recargalo con el boton de refresh.");
-    });
+    const startedAt = performance.now();
+
+    sandpackRef.current
+      .runSandpack()
+      .then(() => {
+        console.info("[builder] preview recompilado", {
+          projectId,
+          durationMs: Math.round(performance.now() - startedAt),
+        });
+      })
+      .catch((error) => {
+        console.error("[builder] no se pudo recompilar el sandbox", {
+          projectId,
+          durationMs: Math.round(performance.now() - startedAt),
+          error,
+        });
+        toast.error("El preview quedo desactualizado. Recargalo con el boton de refresh.");
+      });
   }, [projectId]);
 
   useEffect(() => {
@@ -423,8 +518,8 @@ function FileSync({
     }
     if (!rerunPendingRef.current) return;
 
-    // Lo normal es que router.refresh() traiga los archivos y dispare el efecto
-    // de abajo antes de este plazo; el timer es la red por si no cambia nada.
+    // Espera un tick para que updateFile termine de actualizar el estado interno
+    // de Sandpack antes de iniciar el bundler.
     rerunTimerRef.current = setTimeout(rerun, RERUN_FALLBACK_MS);
 
     return () => {
@@ -438,21 +533,47 @@ function FileSync({
     const changed = Object.entries(externalFiles).filter(
       ([path, content]) => current.files[path]?.code !== content,
     );
+    const stale = Object.keys(current.files).filter(
+      (path) => !HIDDEN_FILES.includes(path) && !(path in externalFiles),
+    );
+
+    // Primero sacamos los archivos del proyecto anterior. updateFile define el
+    // estado final de recompilacion, por eso debe ser la ultima operacion.
+    stale.forEach((path) => current.deleteFile(path, false));
 
     if (changed.length > 0) {
       const nuevos = changed
         .map(([path]) => path)
         .filter((path) => !(path in current.files) && !HIDDEN_FILES.includes(path));
 
-      current.updateFile(Object.fromEntries(changed));
+      // Mientras la IA escribe no compilamos: App.tsx puede importar archivos que
+      // todavía no llegaron. La recompilación única ocurre al cerrar el turno.
+      current.updateFile(Object.fromEntries(changed), undefined, !isStreaming);
       // updateFile no toca visibleFiles: sin esto los archivos nuevos que crea
       // la IA no aparecen en el explorador (autoHiddenFiles los filtra).
       nuevos.forEach((path) => current.openFile(path));
     }
 
     // Recien aca el sandbox tiene todo: si quedo una recompilacion pendiente
-    // del turno que termino, este es el momento.
-    if (!isStreaming) rerun();
+    // del turno que termino, este es el momento. Al cambiar de proyecto con
+    // archivos completos no hacemos runSandpack: updateFile ya re-bundlea en
+    // caliente y evita reiniciar Nodebox.
+    if (!isStreaming && changed.length > 0) {
+      // El cambio de proyecto ya se recompila con updateFile; no hace falta
+      // reiniciar el sandbox por la bandera de un turno anterior.
+      rerunPendingRef.current = false;
+      if (rerunTimerRef.current) {
+        clearTimeout(rerunTimerRef.current);
+        rerunTimerRef.current = null;
+      }
+    } else if (
+      !isStreaming &&
+      rerunPendingRef.current &&
+      changed.length === 0 &&
+      stale.length === 0
+    ) {
+      rerun();
+    }
   }, [externalFiles, isStreaming, rerun]);
 
   useEffect(() => {

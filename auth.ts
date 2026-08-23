@@ -13,7 +13,7 @@ const credentialsSchema = z.object({
   password: z.string().min(8),
 });
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   adapter: PrismaAdapter(prisma),
   // Credentials exige JWT: el adapter sigue usandose para linkear cuentas OAuth.
   session: { strategy: "jwt" },
@@ -80,13 +80,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const db = await prisma.user.findUnique({
             where: { id: token.id ?? (token.sub as string) },
-            select: { id: true, role: true, isActive: true },
+            select: { id: true, role: true, isActive: true, name: true },
           });
 
           if (db) {
             token.id = db.id;
             token.role = db.role;
             token.isActive = db.isActive;
+            token.name = db.name;
           }
         } catch (error) {
           console.error("[auth] no se pudo refrescar el rol del token", {

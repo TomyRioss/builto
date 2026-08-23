@@ -101,7 +101,7 @@ export function BuilderSidebar({
           disabled={isPending}
           aria-label="Nuevo chat"
           title="Nuevo chat"
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1b] disabled:opacity-50"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-[#000000] text-[#ffffff] transition-all hover:scale-105 hover:bg-[#4648d4] disabled:opacity-50"
         >
           <LuPlus className="size-4" aria-hidden />
         </button>
@@ -135,7 +135,7 @@ export function BuilderSidebar({
                         : conversation.projectId
                           ? "py-5 pl-6 pr-14"
                           : "px-6"
-                    } ${active ? "bg-[#edeeef]" : "hover:bg-[#f3f4f5]"}`}
+                    } ${active ? "border-l-[3px] border-l-[#4648d4] bg-[#edeeef]" : "border-l-[3px] border-l-transparent hover:bg-[#f3f4f5]"}`}
                   >
                     <LuMessageSquare
                       className={`size-4 shrink-0 ${
@@ -153,11 +153,17 @@ export function BuilderSidebar({
                     {confirming ? null : (
                       <span
                         suppressHydrationWarning
-                        className={`shrink-0 text-xs font-semibold uppercase tracking-[0.05em] text-[#7e7576] ${
+                        className={`inline-flex shrink-0 items-center gap-1.5 text-xs text-[#7e7576] ${
                           collapsed ? "md:hidden" : ""
                         }`}
                       >
-                        {relativeTime(conversation.updatedAt)}
+                        {isNow(conversation.updatedAt) && (
+                          <span className="relative flex size-1.5">
+                            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#4648d4] opacity-75" />
+                            <span className="relative inline-flex size-1.5 rounded-full bg-[#4648d4]" />
+                          </span>
+                        )}
+                        {relativeTimeLabel(conversation.updatedAt)}
                       </span>
                     )}
                   </Link>
@@ -239,12 +245,16 @@ const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
 
 const formatter = new Intl.RelativeTimeFormat("es", { numeric: "auto", style: "narrow" });
 
-function relativeTime(iso: string): string {
+function isNow(iso: string): boolean {
+  return Date.now() - new Date(iso).getTime() < UNITS[UNITS.length - 1][1];
+}
+
+function relativeTimeLabel(iso: string): string {
   const elapsed = Date.now() - new Date(iso).getTime();
 
   for (const [unit, ms] of UNITS) {
     if (elapsed >= ms) return formatter.format(-Math.floor(elapsed / ms), unit);
   }
 
-  return "ahora";
+  return "editado ahora";
 }

@@ -105,7 +105,7 @@ export default async function DashboardPage() {
             {nombre ? `Bienvenido de nuevo, ${nombre}.` : "Bienvenido de nuevo."}
           </h1>
           <p className="mt-2 max-w-[65ch] text-base leading-6 text-[#4c4546]">
-            Vista previa de tu espacio de trabajo y de lo que esta en desarrollo.
+            Vista precio de tú espacio de trabajo y lo que esta en desarrollo.
           </p>
         </div>
         <button
@@ -144,7 +144,7 @@ export default async function DashboardPage() {
               </Link>
 
               <Link
-                href="/dashboard/builder"
+                href="/dashboard/templates"
                 className="group flex h-40 flex-col justify-between rounded-lg border border-[#e1e3e4] bg-[#ffffff] p-6 text-left transition-colors hover:border-[#7e7576]"
               >
                 <span className="flex size-10 items-center justify-center rounded-full bg-[#f3f4f5] text-[#000000] transition-colors group-hover:bg-[#e1e3e4]">

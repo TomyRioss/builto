@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  LuPlus,
+  LuTicket,
   LuCode,
   LuHistory,
   LuPalette,
@@ -129,7 +129,7 @@ export function NewTicketDialog({ projects }: Props) {
     data.set("title", title.trim());
     data.set("description", scope.trim());
     references.forEach((ref) => data.append("attachments", ref.file));
-    formAction(data);
+    startTransition(() => formAction(data));
   }
 
   const selectedProject = projects.find((p) => p.id === projectId);
@@ -140,12 +140,11 @@ export function NewTicketDialog({ projects }: Props) {
       <DialogTrigger
         render={
           <Button
-            size="lg"
-            className="rounded-md bg-[#000000] px-5 text-xs font-semibold uppercase tracking-[0.05em] text-[#ffffff] hover:bg-[#1b1b1b]"
+            className="rounded-md bg-[#4648d4] px-3.5 text-xs font-semibold uppercase tracking-[0.05em] text-[#ffffff] shadow-[0_1px_2px_rgba(70,72,212,0.25)] hover:bg-[#3a3cb8]"
           />
         }
       >
-        <LuPlus className="size-4" aria-hidden />
+        <LuTicket className="size-3.5" aria-hidden />
         Abrir ticket
       </DialogTrigger>
 

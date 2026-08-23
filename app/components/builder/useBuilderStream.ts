@@ -90,6 +90,9 @@ export function useBuilderStream({
         { id: `local-${Date.now()}`, kind: "USER", body: text, images },
       ]);
 
+      const startedAt = performance.now();
+      let firstChunkAt: number | null = null;
+
       try {
         const response = await fetch(`/api/builder/${conversationId}`, {
           method: "POST",
@@ -108,6 +111,7 @@ export function useBuilderStream({
           const { done, value } = await reader.read();
           if (done) break;
 
+          firstChunkAt ??= performance.now();
           rawRef.current += value;
           scheduleFlush();
         }
@@ -117,6 +121,12 @@ export function useBuilderStream({
           flushRef.current = null;
         }
         flush();
+        console.info("[builder] respuesta recibida", {
+          conversationId,
+          firstChunkMs: firstChunkAt === null ? null : Math.round(firstChunkAt - startedAt),
+          streamMs: Math.round(performance.now() - startedAt),
+          receivedChars: rawRef.current.length,
+        });
       } catch (error) {
         console.error("[builder] fallo el turno de la IA", {
           conversationId,

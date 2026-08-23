@@ -26,6 +26,7 @@ const PreviewPanel = dynamic(() => import("./PreviewPanel"), {
 type Props = {
   conversationId: string;
   projectId: string;
+  projectName: string;
   initialMessages: ChatEntry[];
   initialFiles: Record<string, string>;
 };
@@ -33,6 +34,7 @@ type Props = {
 export function BuilderWorkspace({
   conversationId,
   projectId,
+  projectName,
   initialMessages,
   initialFiles,
 }: Props) {
@@ -42,7 +44,7 @@ export function BuilderWorkspace({
     useBuilderStream({ conversationId, initialMessages, initialFiles });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       {/* Solo el conmutador de panel, y solo en mobile: en desktop chat y
           preview conviven, no hace falta barra. */}
       <div className="flex items-center justify-center gap-1 border-b border-[#cfc4c5] bg-[#ffffff] px-4 py-2 md:hidden">
@@ -70,6 +72,8 @@ export function BuilderWorkspace({
             messages={messages}
             streamingProse={streamingProse}
             isStreaming={isStreaming}
+            writingPath={writingPath}
+            files={files}
             onSend={send}
           />
         </div>
@@ -81,6 +85,7 @@ export function BuilderWorkspace({
         >
           <PreviewPanel
             projectId={projectId}
+            projectName={projectName}
             files={files}
             writingPath={writingPath}
             isStreaming={isStreaming}

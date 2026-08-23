@@ -10,7 +10,7 @@ export default function ClientDashboardPage() {
   return (
     <div className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
       <header className="mb-16 flex flex-col gap-6 sm:mb-20 sm:flex-row sm:items-end sm:justify-between">
-        <div><h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-[-0.03em] text-black sm:text-4xl lg:text-5xl">Bienvenido, Nahuel.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[#4c4546] sm:text-base">Acá tenés una vista previa de tu espacio de trabajo. Tenés 2 tareas pendientes en desarrollo humano.</p></div>
+        <div><h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-[-0.03em] text-black sm:text-4xl lg:text-5xl">Bienvenido, Nahuel.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[#4c4546] sm:text-base">Vista previa de tu espacio de trabajo y de lo que esta en desarrollo.</p></div>
         <NotificationMenu />
       </header>
 

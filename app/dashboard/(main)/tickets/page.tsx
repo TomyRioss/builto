@@ -132,7 +132,7 @@ export default async function TicketsPage() {
           <p className="mt-2 text-sm leading-5 text-[#4c4546]">
             {staff
               ? "Todos los tickets abiertos en la plataforma."
-              : "Los tickets que abriste y su estado."}
+              : "Visualiza su estado."}
           </p>
         </div>
 

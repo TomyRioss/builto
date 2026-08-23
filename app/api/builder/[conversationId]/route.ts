@@ -130,9 +130,12 @@ export async function POST(
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let raw = "";
+      const startedAt = performance.now();
+      let firstDeltaAt: number | null = null;
 
       try {
         for await (const delta of deltas) {
+          firstDeltaAt ??= performance.now();
           raw += delta;
           controller.enqueue(encoder.encode(delta));
         }
@@ -149,7 +152,17 @@ export async function POST(
       // Aunque el stream muera, lo ya recibido se guarda: perder el turno
       // entero por un corte al final seria peor.
       try {
+        const streamFinishedAt = performance.now();
         await persist({ conversationId, projectId, raw, userMessage });
+        console.info("[builder] turno completo", {
+          conversationId,
+          firstTokenMs:
+            firstDeltaAt === null ? null : Math.round(firstDeltaAt - startedAt),
+          generationMs:
+            firstDeltaAt === null ? null : Math.round(streamFinishedAt - firstDeltaAt),
+          totalMs: Math.round(performance.now() - startedAt),
+          receivedChars: raw.length,
+        });
       } catch (error) {
         console.error("[builder] no se pudo persistir la respuesta", {
           conversationId,
