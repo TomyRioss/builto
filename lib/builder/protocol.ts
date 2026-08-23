@@ -109,3 +109,17 @@ export function parseReply(raw: string): ParsedReply {
 
   return { prose, files, openPath, suggestTicket };
 }
+
+const CODE_CHANGE_REQUEST =
+  /\b(agreg|anad|añad|cambi|modific|elimin|quit|sac|crea|implement|disen|diseñ|redisen|rediseñ|pon|actualiz|reemplaz|move|remove|add|change|update|create|build|make|delete|implement)\w*/i;
+
+/** Detecta respuestas que prometen una edicion pero no entregan ningun archivo. */
+export function shouldRetryMissingFiles(raw: string, userMessage: string): boolean {
+  const parsed = parseReply(raw);
+  return (
+    CODE_CHANGE_REQUEST.test(userMessage) &&
+    !parsed.openPath &&
+    !parsed.suggestTicket &&
+    Object.keys(parsed.files).length === 0
+  );
+}

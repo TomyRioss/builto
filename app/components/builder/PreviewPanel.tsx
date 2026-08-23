@@ -94,11 +94,8 @@ type Props = {
   readOnly?: boolean;
 };
 
-/**
- * Margen para que `router.refresh()` traiga los archivos definitivos despues de
- * que termina el stream. Si no llegan en ese plazo, se recompila igual.
- */
-const RERUN_FALLBACK_MS = 2000;
+/** Deja que Sandpack incorpore el ultimo updateFile antes de recrear el bundle. */
+const RERUN_SETTLE_MS = 50;
 
 export default function PreviewPanel({
   projectId,
@@ -674,7 +671,7 @@ function FileSync({
   isStreaming: boolean;
   onRecompilingChange: (loading: boolean) => void;
 }) {
-  const { sandpack } = useSandpack();
+  const { sandpack, listen } = useSandpack();
   const { activeFile } = sandpack;
   const code = sandpack.files[activeFile]?.code;
 
@@ -712,6 +709,29 @@ function FileSync({
   useEffect(() => {
     sandpackRef.current = sandpack;
   }, [sandpack]);
+
+  // runSandpack() resuelve cuando recrea el cliente, varios segundos antes de
+  // que el iframe termine de compilar. Los eventos del bundler son la señal
+  // real para mantener tapada esa ventana en blanco.
+  useEffect(() => {
+    return listen((message) => {
+      if (message.type === "start") {
+        onRecompilingChange(true);
+        return;
+      }
+
+      if (message.type === "status") {
+        onRecompilingChange(
+          !["idle", "done"].includes(message.status),
+        );
+        return;
+      }
+
+      if (message.type === "done" || message.type === "success") {
+        onRecompilingChange(false);
+      }
+    });
+  }, [listen, onRecompilingChange]);
 
   /**
    * Recompilacion pendiente.
@@ -753,8 +773,8 @@ function FileSync({
           error,
         });
         toast.error("El preview quedo desactualizado. Recargalo con el boton de refresh.");
-      })
-      .finally(() => onRecompilingChange(false));
+        onRecompilingChange(false);
+      });
   }, [projectId, onRecompilingChange]);
 
   useEffect(() => {
@@ -768,9 +788,9 @@ function FileSync({
     // version vieja), no recien cuando arranca runSandpack() 2s despues.
     onRecompilingChange(true);
 
-    // Espera un tick para que updateFile termine de actualizar el estado interno
-    // de Sandpack antes de iniciar el bundler.
-    rerunTimerRef.current = setTimeout(rerun, RERUN_FALLBACK_MS);
+    // Si el ultimo flush y el fin del stream llegan juntos, FileSync reemplaza
+    // este timer por otro despues de aplicar el lote final de archivos.
+    rerunTimerRef.current = setTimeout(rerun, RERUN_SETTLE_MS);
 
     return () => {
       if (rerunTimerRef.current) clearTimeout(rerunTimerRef.current);
@@ -825,26 +845,25 @@ function FileSync({
         .map(([path]) => path)
         .filter((path) => !(path in current.files) && !HIDDEN_FILES.includes(path));
 
-      // Mientras la IA escribe no compilamos: App.tsx puede importar archivos que
-      // todavía no llegaron. La recompilación única ocurre al cerrar el turno.
-      current.updateFile(Object.fromEntries(changed), undefined, !isStreaming);
+      // Nunca compilamos dentro de este update masivo. Al terminar el turno se
+      // ejecuta runSandpack() explicitamente con el snapshot completo; confiar
+      // en el hot reload de updateFile puede dejar el iframe con el bundle viejo.
+      current.updateFile(Object.fromEntries(changed), undefined, false);
       // updateFile no toca visibleFiles: sin esto los archivos nuevos que crea
       // la IA no aparecen en el explorador (autoHiddenFiles los filtra).
       nuevos.forEach((path) => current.openFile(path));
     }
 
-    // Recien aca el sandbox tiene todo: si quedo una recompilacion pendiente
-    // del turno que termino, este es el momento. Al cambiar de proyecto con
-    // archivos completos no hacemos runSandpack: updateFile ya re-bundlea en
-    // caliente y evita reiniciar Nodebox.
+    // Recien aca el sandbox tiene todo. React puede batchear el ultimo setFiles
+    // con isStreaming=false; en ese caso `changed` es mayor a cero y antes se
+    // cancelaba el rerun, dejando visible la version anterior para siempre.
     if (!isStreaming && changed.length > 0) {
-      // El cambio de proyecto ya se recompila con updateFile; no hace falta
-      // reiniciar el sandbox por la bandera de un turno anterior.
-      rerunPendingRef.current = false;
+      rerunPendingRef.current = true;
+      onRecompilingChange(true);
       if (rerunTimerRef.current) {
         clearTimeout(rerunTimerRef.current);
-        rerunTimerRef.current = null;
       }
+      rerunTimerRef.current = setTimeout(rerun, RERUN_SETTLE_MS);
     } else if (
       !isStreaming &&
       rerunPendingRef.current &&
@@ -853,7 +872,7 @@ function FileSync({
     ) {
       rerun();
     }
-  }, [externalFiles, isStreaming, rerun]);
+  }, [externalFiles, isStreaming, onRecompilingChange, rerun]);
 
   useEffect(() => {
     if (typeof code !== "string") return;

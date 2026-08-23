@@ -1,17 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { createQuote, type AdminActionState } from "@/app/admin/tickets/actions";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const initialState: AdminActionState = { ok: false, error: null };
 const inputClass = "mt-2 h-11 w-full rounded border border-[#d9dadb] px-3 font-normal outline-none transition-colors focus:border-black";
 
 export function QuoteForm({ ticketId }: { ticketId: string }) {
   const [state, action, pending] = useActionState(createQuote, initialState);
-  const [currency, setCurrency] = useState("");
   useEffect(() => { if (state.ok) toast.success("Cotizacion enviada al cliente."); else if (state.error) toast.error(state.error); }, [state]);
   return (
     <form action={action} className="grid gap-5">
@@ -20,14 +18,10 @@ export function QuoteForm({ ticketId }: { ticketId: string }) {
         <label className="text-sm font-medium">Precio<input name="amount" type="number" min="1" step="0.01" required className={inputClass} /></label>
         <label className="text-sm font-medium">
           Moneda
-          <input type="hidden" name="currency" value={currency} required />
-          <Select value={currency} onValueChange={(next) => next && setCurrency(next)}>
-            <SelectTrigger className="mt-2 h-11 w-full rounded border-[#d9dadb]"><SelectValue placeholder="Elegi la moneda" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ARS">ARS</SelectItem>
-              <SelectItem value="USD">USD</SelectItem>
-            </SelectContent>
-          </Select>
+          <select name="currency" defaultValue="ARS" required className={`${inputClass} bg-white`}>
+            <option value="ARS">Pesos argentinos (ARS)</option>
+            <option value="USD">Dolares estadounidenses (USD)</option>
+          </select>
         </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

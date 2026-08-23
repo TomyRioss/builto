@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { buildSystemPrompt, streamCompletion, type ChatMessage } from "@/lib/builder/deepseek";
-import { CONTINUE_MARKER, parseReply } from "@/lib/builder/protocol";
+import { CONTINUE_MARKER, parseReply, shouldRetryMissingFiles } from "@/lib/builder/protocol";
 import { filesToRecord, getConversation } from "@/lib/builder/queries";
 import { generateTitle, shouldRename } from "@/lib/builder/title";
 import { refinePurpose, shouldRefinePurpose } from "@/lib/builder/purpose";
@@ -16,6 +16,9 @@ const HISTORY_LIMIT = 20;
 
 /** Reintentos maximos para que la IA cierre un <file> que corto a mitad de linea. */
 const MAX_CONTINUATIONS = 10;
+
+/** Reintentos cuando el modelo afirma que edito pero omite todos los <file>. */
+const MAX_MISSING_FILE_RETRIES = 2;
 
 // Sin esto Vercel corta la funcion a los 10-15s por defecto y un turno largo
 // de DeepSeek (varios archivos completos) queda a mitad de stream.
@@ -176,6 +179,56 @@ export async function POST(
         });
         controller.error(error);
         return;
+      }
+
+      // Algunos modelos contestan "listo, lo cambie" sin emitir un solo
+      // bloque <file>. Esa respuesta no modifica ProjectFile y deja tanto el
+      // preview como la revision en la version anterior. Se corrige dentro del
+      // mismo turno para que el cliente no tenga que repetir el pedido.
+      for (let attempt = 0; attempt < MAX_MISSING_FILE_RETRIES; attempt++) {
+        if (!shouldRetryMissingFiles(raw, userMessage)) break;
+
+        console.warn("[builder] respuesta sin archivos, pidiendo correccion", {
+          conversationId,
+          attempt,
+        });
+        controller.enqueue(encoder.encode(CONTINUE_MARKER));
+
+        let correctionDeltas: AsyncGenerator<string>;
+        try {
+          correctionDeltas = await streamCompletion(
+            [
+              ...history,
+              { role: "assistant", content: raw },
+              {
+                role: "user",
+                content: "Afirmaste que hiciste el cambio, pero no emitiste ningun bloque <file>. Realiza ahora la modificacion solicitada. Devuelve el contenido COMPLETO de cada archivo modificado usando exactamente <file path=\"/ruta\">...</file>. No respondas solo con una explicacion.",
+              },
+            ],
+            request.signal,
+          );
+        } catch (error) {
+          console.error("[builder] no se pudo corregir la respuesta sin archivos", {
+            conversationId,
+            attempt,
+            error,
+          });
+          break;
+        }
+
+        try {
+          for await (const delta of correctionDeltas) {
+            raw += delta;
+            controller.enqueue(encoder.encode(delta));
+          }
+        } catch (error) {
+          console.error("[builder] se corto la correccion sin archivos", {
+            conversationId,
+            attempt,
+            error,
+          });
+          break;
+        }
       }
 
       // El modelo a veces corta un <file> a mitad de linea (limite de tokens,
