@@ -44,3 +44,26 @@ test("openPath marca el archivo que la IA todavia esta escribiendo", () => {
   );
   assert.equal(parseReply("solo prosa").openPath, null);
 });
+
+test("el tag de sugerencia de ticket se saca de la prosa y activa la bandera", () => {
+  const abierto = parseReply(
+    "Es una tarea compleja que se escapa de mis capacidades. Conviene abrir un ticket.\n<ticket_suggestion>",
+  );
+  assert.equal(abierto.suggestTicket, true);
+  assert.equal(
+    abierto.prose,
+    "Es una tarea compleja que se escapa de mis capacidades. Conviene abrir un ticket.",
+  );
+
+  const conCierre = parseReply("Tarea muy compleja.<ticket_suggestion></ticket_suggestion>");
+  assert.equal(conCierre.suggestTicket, true);
+  assert.equal(conCierre.prose, "Tarea muy compleja.");
+});
+
+test("sin el tag no hay sugerencia de ticket", () => {
+  assert.equal(parseReply("Listo, arme el hero.").suggestTicket, false);
+  assert.equal(
+    parseReply('Prosa.\n<file path="/App.tsx">a</file>').suggestTicket,
+    false,
+  );
+});

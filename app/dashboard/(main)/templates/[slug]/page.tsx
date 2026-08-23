@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LuArrowLeft } from "react-icons/lu";
 
+import { UseTemplateButton } from "@/app/components/builder/UseTemplateButton";
+
 const TEMPLATES: Record<string, { name: string }> = {
   restaurante: { name: "Origen — Restaurante de alta cocina" },
   viajes: { name: "Aura — Viajes de autor & expediciones" },
@@ -31,6 +33,9 @@ export default async function TemplatePreviewPage({
           Volver
         </Link>
         <h1 className="text-sm font-semibold text-[#000000]">{template.name}</h1>
+        <div className="ml-auto">
+          <UseTemplateButton slug={slug} />
+        </div>
       </div>
       <iframe
         src={`/templates/${slug}/index.html`}

@@ -4,12 +4,12 @@ import {
   LuBell,
   LuLayoutTemplate,
   LuListFilter,
-  LuPlus,
   LuSparkles,
   LuTicket,
   LuUserSearch,
 } from "react-icons/lu";
 
+import { NewProjectCard } from "@/app/components/builder/NewProjectCard";
 import { auth } from "@/auth";
 import { listRecentProjects, type RecentProject } from "@/lib/builder/queries";
 import { listActivity } from "@/lib/dashboard/activity";
@@ -126,22 +126,7 @@ export default async function DashboardPage() {
               Acciones
             </h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Link
-                href="/dashboard/builder"
-                className="flex h-40 flex-col justify-between rounded-lg bg-[#6063ee] p-6 text-left transition-opacity hover:opacity-95"
-              >
-                <span className="flex size-10 items-center justify-center rounded-full bg-white/20 text-[#ffffff]">
-                  <LuPlus className="size-4" aria-hidden />
-                </span>
-                <span>
-                  <span className="block text-base font-medium leading-6 text-[#ffffff]">
-                    Crear nuevo proyecto
-                  </span>
-                  <span className="mt-1 block text-sm leading-5 text-[#ffffff]/80">
-                    Empeza un nuevo chat con la IA.
-                  </span>
-                </span>
-              </Link>
+              <NewProjectCard />
 
               <Link
                 href="/dashboard/templates"

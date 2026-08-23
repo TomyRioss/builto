@@ -4,14 +4,18 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { buildSystemPrompt, streamCompletion, type ChatMessage } from "@/lib/builder/deepseek";
-import { parseReply } from "@/lib/builder/protocol";
+import { CONTINUE_MARKER, parseReply } from "@/lib/builder/protocol";
 import { filesToRecord, getConversation } from "@/lib/builder/queries";
 import { generateTitle, shouldRename } from "@/lib/builder/title";
 import { refinePurpose, shouldRefinePurpose } from "@/lib/builder/purpose";
 import { withStarterFiles } from "@/lib/builder/template";
+import { uploadBuilderImages } from "@/lib/storage/builder-assets";
 
 /** Cuantos mensajes de historial se mandan al modelo por turno. */
 const HISTORY_LIMIT = 20;
+
+/** Reintentos maximos para que la IA cierre un <file> que corto a mitad de linea. */
+const MAX_CONTINUATIONS = 10;
 
 // Sin esto Vercel corta la funcion a los 10-15s por defecto y un turno largo
 // de DeepSeek (varios archivos completos) queda a mitad de stream.
@@ -66,6 +70,19 @@ export async function POST(
   const userMessage = parsed.data.content;
   const images = parsed.data.images ?? [];
 
+  // Subimos las imagenes al bucket publico: el modelo necesita URLs estables
+  // para poder referenciarlas en el codigo que genera (un data URL no entra en
+  // la salida del modelo). Si falla, caemos a los data URLs originales.
+  let imageUrls = images;
+  if (images.length > 0) {
+    try {
+      const uploaded = await uploadBuilderImages(conversationId, session.user.id, images);
+      imageUrls = uploaded.map((image) => image.url);
+    } catch (error) {
+      console.error("[builder] no se pudieron subir las imagenes", { conversationId, error });
+    }
+  }
+
   const conversation = await getConversation(conversationId, session.user.id);
 
   if (!conversation) {
@@ -76,7 +93,10 @@ export async function POST(
   const files = withStarterFiles(filesToRecord(conversation.project!.files));
 
   const history: ChatMessage[] = [
-    { role: "system", content: buildSystemPrompt(files, conversation.purpose) },
+    {
+      role: "system",
+      content: buildSystemPrompt(files, conversation.purpose, imageUrls),
+    },
     ...conversation.messages
       .filter((m) => m.senderKind === "USER" || m.senderKind === "AI")
       .slice(-HISTORY_LIMIT)
@@ -87,11 +107,11 @@ export async function POST(
     {
       role: "user",
       content:
-        images.length === 0
+        imageUrls.length === 0
           ? userMessage
           : [
               { type: "text", text: userMessage },
-              ...images.map((url) => ({ type: "image_url" as const, image_url: { url } })),
+              ...imageUrls.map((url) => ({ type: "image_url" as const, image_url: { url } })),
             ],
     },
   ];
@@ -103,7 +123,7 @@ export async function POST(
         senderId: session.user.id,
         senderKind: "USER",
         body: userMessage,
-        meta: images.length > 0 ? { images } : undefined,
+        meta: imageUrls.length > 0 ? { images: imageUrls } : undefined,
       },
     });
   } catch (error) {
@@ -158,6 +178,60 @@ export async function POST(
         return;
       }
 
+      // El modelo a veces corta un <file> a mitad de linea (limite de tokens,
+      // hiccup de red). En vez de descartar el archivo, se le pide que
+      // continue exactamente donde quedo, hasta cerrarlo.
+      for (let attempt = 0; attempt < MAX_CONTINUATIONS; attempt++) {
+        const { openPath } = parseReply(raw);
+        if (!openPath) break;
+
+        console.warn("[builder] archivo cortado, pidiendo continuacion", {
+          conversationId,
+          openPath,
+          attempt,
+        });
+
+        // Fuera de raw: el cliente lo saca del texto antes de parsear, solo
+        // le sirve para mostrar el aviso de "resolviendo".
+        controller.enqueue(encoder.encode(CONTINUE_MARKER));
+
+        let continuationDeltas: AsyncGenerator<string>;
+        try {
+          continuationDeltas = await streamCompletion(
+            [
+              ...history,
+              { role: "assistant", content: raw },
+              {
+                role: "user",
+                content: `Se corto "${openPath}" a mitad de linea. Continua EXACTAMENTE desde el ultimo caracter que escribiste (no repitas nada de lo ya escrito, no vuelvas a abrir el tag <file>) hasta terminar el archivo completo y cerrar con </file>. Sin prosa, solo el resto del codigo.`,
+              },
+            ],
+            request.signal,
+          );
+        } catch (error) {
+          console.error("[builder] no se pudo pedir la continuacion", {
+            conversationId,
+            openPath,
+            error,
+          });
+          break;
+        }
+
+        try {
+          for await (const delta of continuationDeltas) {
+            raw += delta;
+            controller.enqueue(encoder.encode(delta));
+          }
+        } catch (error) {
+          console.error("[builder] se corto la continuacion", {
+            conversationId,
+            openPath,
+            error,
+          });
+          break;
+        }
+      }
+
       // Aunque el stream muera, lo ya recibido se guarda: perder el turno
       // entero por un corte al final seria peor.
       try {
@@ -205,7 +279,19 @@ async function persist({
   raw: string;
   userMessage: string;
 }) {
-  const { prose, files } = parseReply(raw);
+  const { prose, files, openPath, suggestTicket } = parseReply(raw);
+
+  // Si el stream se corto con un <file> sin cerrar, ese contenido esta
+  // truncado a la mitad (strings/tags sin terminar). Persistirlo rompe el
+  // build para siempre; mejor descartar ese archivo y dejar la version previa.
+  if (openPath) {
+    delete files[openPath];
+    console.error("[builder] archivo sin cerrar, se descarta para no romper el build", {
+      conversationId,
+      openPath,
+    });
+  }
+
   const paths = Object.keys(files);
 
   await prisma.$transaction([
@@ -221,7 +307,12 @@ async function persist({
         conversationId,
         senderKind: "AI",
         body: prose || "Actualice los archivos del proyecto.",
-        meta: { files: paths },
+        meta: {
+          files: paths,
+          // La UI usa esto para mostrar los botones de abrir ticket aunque se
+          // recargue la pagina: la prosa ya no contiene el tag.
+          ...(suggestTicket ? { suggestTicket: true } : {}),
+        },
       },
     }),
     prisma.conversation.update({

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Eye, UserRound } from "lucide-react";
 import { notFound } from "next/navigation";
-import { ClarificationButton } from "@/components/admin/admin-action-button";
+import { ArchiveTicketButton, AskDetailsLink, ManualStatusForm } from "@/components/admin/admin-action-button";
 import { DeveloperAssignment } from "@/components/admin/developer-assignment";
 import { QuoteForm } from "@/components/admin/quote-form";
 import { getAdminTicket, getAssignableDevelopers } from "@/lib/admin/queries";
@@ -12,7 +12,7 @@ import { getReviewStage } from "@/lib/tickets/review";
 
 export const dynamic = "force-dynamic";
 const QUOTABLE = new Set(["PENDING", "CLARIFYING", "QUOTED"]);
-const date = new Intl.DateTimeFormat("es-AR", { dateStyle: "medium", timeStyle: "short" });
+const date = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", dateStyle: "medium", timeStyle: "short" });
 
 export default async function AdminTicketDetailPage(props: PageProps<"/admin/tickets/[ticketId]">) {
   const { ticketId } = await props.params;
@@ -54,9 +54,21 @@ export default async function AdminTicketDetailPage(props: PageProps<"/admin/tic
 
         <aside className="space-y-7">
           <section className="rounded-lg border border-[#d9dadb] p-6">
+            <h2 className="text-lg font-semibold">Mensajes</h2>
+            <p className="mt-1 text-sm leading-5 text-[#666768]">Chat directo con el cliente, visible para ambos.</p>
+            <div className="mt-4"><AskDetailsLink ticketId={ticket.id} /></div>
+          </section>
+
+          <section className="rounded-lg border border-[#d9dadb] p-6">
             <h2 className="text-lg font-semibold">Gestion comercial</h2>
-            {ticket.status === "PENDING" && <div className="mt-4"><ClarificationButton ticketId={ticket.id} /></div>}
             {QUOTABLE.has(ticket.status) ? <div className="mt-5"><QuoteForm ticketId={ticket.id} /></div> : <p className="mt-4 text-sm leading-6 text-[#666768]">Este ticket ya avanzo y no admite una nueva cotizacion en su estado actual.</p>}
+          </section>
+
+          <section className="rounded-lg border border-[#d9dadb] p-6">
+            <h2 className="text-lg font-semibold">Estado y archivo</h2>
+            <p className="mt-1 text-sm leading-5 text-[#666768]">Cambio manual para destrabar tickets, y archivado cuando ya no aplica.</p>
+            <div className="mt-4"><ManualStatusForm ticketId={ticket.id} currentStatus={ticket.status} /></div>
+            {ticket.status !== "CANCELLED" && <div className="mt-3"><ArchiveTicketButton ticketId={ticket.id} /></div>}
           </section>
 
           <section className="rounded-lg border border-[#d9dadb] p-6">

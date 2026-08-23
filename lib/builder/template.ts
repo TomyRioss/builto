@@ -61,6 +61,7 @@ const PACKAGE_JSON = {
     clsx: "^2.1.1",
     "lucide-react": "^0.469.0",
     "react-icons": "^5.4.0",
+    "react-router-dom": "^6.28.0",
     "tailwind-merge": "^2.6.0",
   },
   devDependencies: {
@@ -80,31 +81,19 @@ const PACKAGE_JSON = {
   },
 };
 
-export const STARTER_FILES: Record<string, string> = {
-  "/package.json": `${JSON.stringify(PACKAGE_JSON, null, 2)}\n`,
-
-  "/index.html": `<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-    />
-    <title>Sitio</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-
-    <!-- Captura del preview para las tarjetas del dashboard.
-
-         El preview corre en un iframe cross-origin (Nodebox), asi que el
-         parent no puede leer su DOM ni capturarlo. La captura se toma aca
-         adentro y sale por postMessage; el parent la persiste. Tampoco sirve
-         que el parent la pida: el iframe de la app esta anidado dentro del de
-         Nodebox y no es alcanzable por DOM. Por eso se auto-dispara. -->
+/**
+ * Captura del preview para las tarjetas del dashboard.
+ *
+ * El preview corre en un iframe cross-origin (Nodebox), asi que el parent no
+ * puede leer su DOM ni capturarlo. La captura se toma adentro y sale por
+ * postMessage; el parent la persiste. Tampoco sirve que el parent la pida: el
+ * iframe de la app esta anidado dentro del de Nodebox y no es alcanzable por
+ * DOM. Por eso se auto-dispara.
+ *
+ * Lo usan el starter y los seeds de plantillas: sin esto las tarjetas de
+ * proyectos creados desde plantilla quedarian sin miniatura.
+ */
+export const PREVIEW_CAPTURE_SCRIPT = `
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script>
       (function () {
@@ -173,7 +162,53 @@ export const STARTER_FILES: Record<string, string> = {
           });
         });
       })();
-    </script>
+    </script>`;
+
+/**
+ * `sandpack.error` solo cubre errores del bundler: una excepcion en runtime
+ * (ej. un componente que tira al renderizar) deja el iframe en blanco sin que
+ * Sandpack lo detecte, y sin overlay el usuario ve una pantalla vacia para
+ * siempre, incluso tras refrescar (el codigo guardado sigue roto). Esto
+ * reporta esas excepciones al parent para que PreviewPanel las muestre.
+ */
+export const RUNTIME_ERROR_SCRIPT = `
+    <script>
+      (function () {
+        function report(message, extra) {
+          window.top.postMessage(
+            { type: "builto:runtime-error", message: message, extra: extra || "" },
+            "*"
+          );
+        }
+        window.addEventListener("error", function (event) {
+          report(event.message, event.filename ? event.filename + ":" + event.lineno : "");
+        });
+        window.addEventListener("unhandledrejection", function (event) {
+          var reason = event.reason;
+          report(reason && reason.message ? reason.message : String(reason));
+        });
+      })();
+    </script>`;
+
+export const STARTER_FILES: Record<string, string> = {
+  "/package.json": `${JSON.stringify(PACKAGE_JSON, null, 2)}\n`,
+
+  "/index.html": `<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    />
+    <title>Sitio</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+${PREVIEW_CAPTURE_SCRIPT}
+${RUNTIME_ERROR_SCRIPT}
   </body>
 </html>
 `,

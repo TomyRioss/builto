@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { Prisma } from "@/app/generated/prisma/client";
+import type { TicketStatus } from "@/app/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import { canQuote, canSeeTransactions } from "@/lib/permissions";
 
@@ -110,16 +111,6 @@ export async function createQuote(_previous: AdminActionState, formData: FormDat
   return { ok: true, error: null };
 }
 
-export async function requestClarification(ticketId: string): Promise<AdminActionState> {
-  const session = await auth();
-  if (!session?.user || !canQuote(session.user.role)) return { ok: false, error: "Sin permiso." };
-  const result = await prisma.ticket.updateMany({ where: { id: ticketId, status: "PENDING" }, data: { status: "CLARIFYING" } });
-  if (result.count !== 1) return { ok: false, error: "El ticket ya cambio de estado." };
-  await prisma.auditLog.create({ data: { actorId: session.user.id, action: "ticket.clarification_requested", entityType: "Ticket", entityId: ticketId } });
-  revalidatePath(`/admin/tickets/${ticketId}`);
-  return { ok: true, error: null };
-}
-
 export async function confirmManualPayment(quoteId: string): Promise<AdminActionState> {
   const session = await auth();
   if (!session?.user || !canSeeTransactions(session.user.role)) return { ok: false, error: "No tenes permiso para confirmar pagos." };
@@ -170,6 +161,44 @@ export async function assignDeveloper(ticketId: string, developerId: string): Pr
   revalidatePath("/admin/tickets");
   revalidatePath("/admin/dashboard");
   revalidatePath("/admin/developers");
+  revalidatePath("/dev/dashboard");
+  revalidatePath("/dev/tickets");
+  revalidatePath("/dev/projects");
+  return { ok: true, error: null };
+}
+
+const ARCHIVABLE: TicketStatus[] = ["PENDING", "CLARIFYING", "QUOTED", "ACCEPTED", "REJECTED", "DONE"];
+
+/** No hay borrado real: "archivar" pasa el ticket a CANCELLED, igual que la cancelacion del cliente. */
+export async function archiveTicket(ticketId: string): Promise<AdminActionState> {
+  const session = await auth();
+  if (!session?.user || !canQuote(session.user.role)) return { ok: false, error: "No tenes permiso para archivar tickets." };
+  const result = await prisma.ticket.updateMany({ where: { id: ticketId, status: { in: ARCHIVABLE } }, data: { status: "CANCELLED" } });
+  if (result.count !== 1) return { ok: false, error: "El ticket no se puede archivar en su estado actual." };
+  await prisma.auditLog.create({ data: { actorId: session.user.id, action: "ticket.archived", entityType: "Ticket", entityId: ticketId } });
+  revalidatePath(`/admin/tickets/${ticketId}`);
+  revalidatePath("/admin/tickets");
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/dashboard/tickets");
+  return { ok: true, error: null };
+}
+
+const MANUAL_STATUS = z.enum(["PENDING", "CLARIFYING", "QUOTED", "ACCEPTED", "PAID", "IN_PROGRESS", "REVIEW", "DONE", "REJECTED", "CANCELLED"]);
+
+/** Override manual de estado para destrabar tickets colgados durante testeo/soporte. */
+export async function setTicketStatus(ticketId: string, rawStatus: string): Promise<AdminActionState> {
+  const session = await auth();
+  if (!session?.user || !canQuote(session.user.role)) return { ok: false, error: "No tenes permiso para cambiar el estado." };
+  const parsed = MANUAL_STATUS.safeParse(rawStatus);
+  if (!parsed.success) return { ok: false, error: "Estado invalido." };
+  const previous = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { status: true } });
+  if (!previous) return { ok: false, error: "El ticket no existe." };
+  await prisma.ticket.update({ where: { id: ticketId }, data: { status: parsed.data } });
+  await prisma.auditLog.create({ data: { actorId: session.user.id, action: "ticket.status_overridden", entityType: "Ticket", entityId: ticketId, meta: { from: previous.status, to: parsed.data } } });
+  revalidatePath(`/admin/tickets/${ticketId}`);
+  revalidatePath("/admin/tickets");
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/dashboard/tickets");
   revalidatePath("/dev/dashboard");
   revalidatePath("/dev/tickets");
   revalidatePath("/dev/projects");

@@ -2,16 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LuArrowUp, LuLoader, LuX } from "react-icons/lu";
+import { toast } from "sonner";
 
 import type { ChatEntry } from "./useBuilderStream";
 import { ThinkingIndicator } from "./ThinkingIndicator";
+import { NewTicketDialog } from "@/app/components/tickets/NewTicketDialog";
 
 type Props = {
   messages: ChatEntry[];
   streamingProse: string;
   isStreaming: boolean;
   writingPath?: string | null;
+  isFixing?: boolean;
   files?: Record<string, string>;
+  projectId: string;
+  projectName: string;
   onSend: (content: string, images?: string[]) => void;
 };
 
@@ -45,7 +50,17 @@ function profilePrompt(pageType: string, profile: BusinessProfile) {
   return optimizedPrompt(pageType, profile);
 }
 
-export function ChatPanel({ messages, streamingProse, isStreaming, writingPath, files, onSend }: Props) {
+export function ChatPanel({
+  messages,
+  streamingProse,
+  isStreaming,
+  writingPath,
+  isFixing,
+  files,
+  projectId,
+  projectName,
+  onSend,
+}: Props) {
   const [draft, setDraft] = useState("");
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
@@ -156,7 +171,7 @@ export function ChatPanel({ messages, streamingProse, isStreaming, writingPath, 
             <>
               <p className="max-w-[65ch] text-base leading-6 text-[#4c4546]">
                 Contale que queres construir. La pagina se va a ir armando a la derecha
-                mientras la IA escribe. Podes pegar una imagen con Ctrl+V.
+                mientras la IA escribe.
               </p>
               <div className="flex flex-wrap gap-2" aria-label="Sugerencias rápidas">
                 {PAGE_SUGGESTIONS.map((suggestion) => (
@@ -241,17 +256,21 @@ export function ChatPanel({ messages, streamingProse, isStreaming, writingPath, 
           {messages.map((message) => (
             <Bubble key={message.id} mine={message.kind === "USER"} images={message.images}>
               <MessageBody text={message.body} mine={message.kind === "USER"} />
+              {message.kind === "AI" && message.suggestTicket && (
+                <TicketSuggestionActions projectId={projectId} projectName={projectName} />
+              )}
             </Bubble>
           ))}
 
-          {isStreaming && (
+          {isStreaming && messages[messages.length - 1]?.kind !== "AI" && (
             <Bubble mine={false}>
-              {streamingProse ? (
+              {streamingProse && !writingPath && !isFixing ? (
                 <MessageBody text={streamingWords.slice(0, visibleWordCount).join("")} mine={false} />
               ) : (
                 <ThinkingIndicator
                   writingPath={writingPath}
                   fileExists={Boolean(writingPath && files && writingPath in files)}
+                  fixing={isFixing}
                 />
               )}
             </Bubble>
@@ -398,5 +417,49 @@ function MessageBody({ text, mine }: { text: string; mine: boolean }) {
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * Botones que acompanan la respuesta de la IA cuando deriva un pedido muy
+ * complejo a un ticket: "Abrir ticket" abre el wizard ya fijado al proyecto
+ * actual y "Omitir" esconde la sugerencia.
+ */
+function TicketSuggestionActions({
+  projectId,
+  projectName,
+}: {
+  projectId: string;
+  projectName: string;
+}) {
+  const [dismissed, setDismissed] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  if (dismissed) return null;
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setDialogOpen(true)}
+          className="rounded-md bg-[#7c3aed] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#ffffff] transition-colors hover:bg-[#6d28d9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7c3aed]"
+        >
+          Abrir ticket
+        </button>
+        <button
+          type="button"
+          onClick={() => setDismissed(true)}
+          className="rounded-md border border-[#191c1d] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#191c1d] transition-colors hover:bg-[#edeeef] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4648d4]"
+        >
+          Omitir
+        </button>
+      </div>
+      <NewTicketDialog
+        projects={[{ id: projectId, name: projectName, thumbnail: null }]}
+        externalOpen={dialogOpen}
+        onExternalClose={() => setDialogOpen(false)}
+      />
+    </>
   );
 }

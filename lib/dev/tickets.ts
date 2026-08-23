@@ -32,3 +32,22 @@ export async function getDeveloperTickets(developerId: string) {
 }
 
 export type DeveloperTicket = Awaited<ReturnType<typeof getDeveloperTickets>>[number];
+
+/** Actividad sobre tickets que el developer tiene o tuvo asignados, mas sus propias acciones. */
+export async function getDeveloperHistory(developerId: string) {
+  const ticketIds = await prisma.ticket.findMany({
+    where: { assignedDevId: developerId },
+    select: { id: true },
+  });
+  return prisma.auditLog.findMany({
+    where: {
+      OR: [
+        { actorId: developerId },
+        { entityType: "Ticket", entityId: { in: ticketIds.map((t) => t.id) } },
+      ],
+    },
+    select: { id: true, action: true, entityType: true, entityId: true, createdAt: true, actor: { select: { name: true, email: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+}

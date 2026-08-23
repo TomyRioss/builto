@@ -24,7 +24,16 @@ function shortenPath(path: string) {
   return `…/${parts.slice(-2).join("/")}`;
 }
 
-export function ThinkingIndicator({ writingPath, fileExists }: { writingPath?: string | null; fileExists?: boolean }) {
+export function ThinkingIndicator({
+  writingPath,
+  fileExists,
+  fixing = false,
+}: {
+  writingPath?: string | null;
+  fileExists?: boolean;
+  /** El modelo corto un archivo y lo esta reintentando: aviso distinto, en rojo. */
+  fixing?: boolean;
+}) {
   const [tick, setTick] = useState(0);
   const reducedMotion = useReducedMotion();
 
@@ -33,17 +42,22 @@ export function ThinkingIndicator({ writingPath, fileExists }: { writingPath?: s
     return () => window.clearInterval(interval);
   }, []);
 
-  const label = writingPath
-    ? `${fileExists ? "Editando" : "Programando"} ${shortenPath(writingPath)}`
-    : GENERIC_STATUS[tick % GENERIC_STATUS.length];
+  const label = fixing
+    ? "Resolviendo bugs"
+    : writingPath
+      ? `${fileExists ? "Editando" : "Programando"} ${shortenPath(writingPath)}`
+      : GENERIC_STATUS[tick % GENERIC_STATUS.length];
+
+  const textColor = fixing ? "text-[#c2483b]" : "text-[#4648d4]";
+  const dotColor = fixing ? "bg-[#d9634f]" : "bg-[#6063ee]";
 
   return (
-    <span className="inline-flex min-h-6 max-w-full items-center gap-2.5 text-sm text-[#4648d4]" role="status" aria-live="polite">
+    <span className={`inline-flex min-h-6 max-w-full items-center gap-2.5 text-sm ${textColor}`} role="status" aria-live="polite">
       <span className="inline-flex shrink-0 items-end gap-1" aria-hidden="true">
         {[0, 1, 2].map((dot) => (
           <motion.span
             key={dot}
-            className="size-2 rounded-full bg-[#6063ee]"
+            className={`size-2 rounded-full ${dotColor}`}
             animate={reducedMotion ? {} : { y: [0, -5, 0], scale: [1, 1.2, 1], opacity: [0.55, 1, 0.55] }}
             transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: dot * 0.15 }}
           />

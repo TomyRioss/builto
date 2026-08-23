@@ -6,6 +6,7 @@ import {
   SandpackFileExplorer,
   SandpackLayout,
   SandpackPreview,
+  SandpackProvider,
   useSandpack,
 } from "@codesandbox/sandpack-react";
 import { LuCode, LuDownload, LuEye, LuLoader, LuPlus, LuUpload, LuX } from "react-icons/lu";
@@ -18,6 +19,9 @@ import { normalizePath } from "@/lib/builder/protocol";
 import {
   ENTRY_FILE,
   HIDDEN_FILES,
+  SANDBOX_ENTRY,
+  SANDBOX_ENVIRONMENT,
+  SANDBOX_TEMPLATE,
 } from "@/lib/builder/template";
 
 const SAVE_DEBOUNCE_MS = 800;
@@ -60,6 +64,10 @@ const LOADING_MESSAGES = [
   "Validando que no sea otro z-index",
   "Casi listo, no muevas nada",
 ];
+
+/** Easter egg: chance minima de reemplazar el mensaje normal en cada tick. */
+const EASTER_EGG_MESSAGE = "Farmeando aura";
+const EASTER_EGG_CHANCE = 0.02;
 
 const MESSAGE_INTERVAL_MS = 2200;
 const DOT_INTERVAL_MS = 450;
@@ -106,12 +114,35 @@ export default function PreviewPanel({
 
   useThumbnailCapture(projectId);
 
+  // Sandpack resetea el sandbox entero (y con Nodebox eso es `npm install` de
+  // nuevo, ~1 min en blanco) cada vez que cambia la IDENTIDAD de `files`,
+  // `customSetup` u `options` — ver useFiles en sandpack-react. Por eso se
+  // monta una sola vez con el snapshot inicial y props congeladas; lo que
+  // escribe la IA despues entra en caliente por updateFile (FileSync).
+  const [mountFiles] = useState(files);
+  const [mountSetup] = useState(() => ({
+    environment: SANDBOX_ENVIRONMENT,
+    entry: SANDBOX_ENTRY,
+  }));
+  const [mountOptions] = useState(() => ({
+    activeFile: ENTRY_FILE,
+    visibleFiles: visibleFiles(files),
+    // Nodebox corre npm install de verdad: en frio son ~50s.
+    bundlerTimeOut: 240_000,
+  }));
+
   const previewScopeRef = useRef<HTMLDivElement>(null);
-  const { sandpack } = useSandpack();
-  useBundlerLoading(sandpack.status, projectId);
-  const previewReady = usePreviewReady();
-  const showPreviewLoading =
-    !previewReady && sandpack.status !== "timeout" && !sandpack.error;
+  const bundlerLoading = useBundlerLoading(previewScopeRef);
+  const runtimeError = useRuntimeError(isStreaming);
+  // `.sp-loading` vive adentro del iframe de Nodebox: en una recompilacion
+  // grande (npm install de una dependencia nueva, muchos archivos juntos) no
+  // siempre se ve desde afuera y el preview queda en blanco sin aviso. Esto
+  // se prende a mano alrededor del runSandpack() real, sin depender del DOM.
+  const [recompiling, setRecompiling] = useState(false);
+  // Cubrimos la transicion desde el inicio del turno: Sandpack puede dejar el
+  // iframe en blanco antes de que su estado de carga o la recompilacion sean
+  // observables desde afuera.
+  const showLoadingOverlay = bundlerLoading || recompiling || isStreaming;
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#f8f9fa]">
@@ -154,9 +185,7 @@ export default function PreviewPanel({
 
       <div
         ref={previewScopeRef}
-        className={`sandpack-preview-scope relative min-h-0 flex-1 ${
-          previewReady ? "preview-ready" : ""
-        }`}
+        className="sandpack-preview-scope relative min-h-0 flex-1"
       >
         {isStreaming && (
           <div
@@ -165,12 +194,23 @@ export default function PreviewPanel({
             aria-label="Generando preview"
           />
         )}
-        {showPreviewLoading && <BundlerLoadingText />}
-        {sandpack.error && !showPreviewLoading && (
-          <PreviewError error={sandpack.error} onRetry={sandpack.runSandpack} />
-        )}
+        {showLoadingOverlay && <BundlerLoadingText />}
 
-        <FileSync projectId={projectId} externalFiles={files} isStreaming={isStreaming} />
+        <SandpackProvider
+          template={SANDBOX_TEMPLATE}
+          files={mountFiles}
+          customSetup={mountSetup}
+          options={mountOptions}
+          style={{ height: "100%" }}
+        >
+          <PreviewErrorOverlay bundlerLoading={showLoadingOverlay} runtimeError={runtimeError} />
+
+          <FileSync
+            projectId={projectId}
+            externalFiles={files}
+            isStreaming={isStreaming}
+            onRecompilingChange={setRecompiling}
+          />
 
           <SandpackLayout
             style={{
@@ -204,11 +244,53 @@ export default function PreviewPanel({
               readOnly={readOnly}
               style={{ height: "100%", display: tab === "code" ? "flex" : "none" }}
             />
-        </SandpackLayout>
-
+          </SandpackLayout>
+        </SandpackProvider>
       </div>
     </section>
   );
+}
+
+/** Necesita estar dentro de SandpackProvider para leer sandpack.error/runSandpack. */
+function PreviewErrorOverlay({
+  bundlerLoading,
+  runtimeError,
+}: {
+  bundlerLoading: boolean;
+  runtimeError: string | null;
+}) {
+  const { sandpack } = useSandpack();
+  if (bundlerLoading) return null;
+  if (sandpack.error) return <PreviewError error={sandpack.error} onRetry={sandpack.runSandpack} />;
+  if (runtimeError) return <PreviewError error={{ message: runtimeError }} onRetry={sandpack.runSandpack} />;
+  return null;
+}
+
+/**
+ * Escucha las excepciones de runtime que reporta `RUNTIME_ERROR_SCRIPT` (ver
+ * template.ts) desde el iframe del sandbox. `sandpack.error` no las cubre:
+ * son errores de React/JS en el browser, no del bundler, y sin esto el
+ * usuario se queda mirando un iframe en blanco sin ningun aviso.
+ */
+function useRuntimeError(isStreaming: boolean) {
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isStreaming) setError(null);
+  }, [isStreaming]);
+
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      const data = event.data;
+      if (typeof data !== "object" || data === null || (data as { type?: unknown }).type !== "builto:runtime-error") return;
+      const message = (data as { message?: unknown }).message;
+      if (typeof message === "string") setError(message);
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  return error;
 }
 
 function NewFileControl() {
@@ -430,46 +512,25 @@ function ExportCodeButton() {
 /**
  * Sandpack no expone si esta bundleando/instalando como prop publica; el
  * overlay `.sp-loading` se monta y desmonta solo mientras dura. Observamos
- * el DOM en vez de pelear con su estado interno.
+ * el DOM en vez de pelear con su estado interno (mas confiable que
+ * sandpack.status/listen(), que puede quedarse pegado sin emitir "done").
  */
-function useBundlerLoading(status: string, projectId: string) {
-  const loading = status === "initial" || status === "running";
-  const startedAtRef = useRef<number | null>(null);
+function useBundlerLoading(scopeRef: React.RefObject<HTMLDivElement | null>) {
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (loading && startedAtRef.current === null) {
-      startedAtRef.current = performance.now();
-    }
+    const root = scopeRef.current;
+    if (!root) return;
 
-    if (!loading && startedAtRef.current !== null) {
-      console.info("[builder] bundler listo", {
-        projectId,
-        status,
-        durationMs: Math.round(performance.now() - startedAtRef.current),
-      });
-      startedAtRef.current = null;
-    }
-  }, [loading, projectId, status]);
+    const check = () => setLoading(root.querySelector(".sp-loading") !== null);
+    check();
+
+    const observer = new MutationObserver(check);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [scopeRef]);
 
   return loading;
-}
-
-function usePreviewReady() {
-  const { sandpack, listen } = useSandpack();
-  const [ready, setReady] = useState(sandpack.status === "done");
-
-  useEffect(() => {
-    const unsubscribe = listen((message) => {
-      if (message.type === "start" && message.firstLoad) setReady(false);
-      if (message.type === "done" && message.compilatonError === false) setReady(true);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [listen, sandpack.status]);
-
-  return ready;
 }
 
 /** Texto grande sobre el cubo: rotula el mensaje cada tanto, puntos suspensivos animados. */
@@ -477,10 +538,12 @@ function BundlerLoadingText() {
   const [messageIndex, setMessageIndex] = useState(() =>
     Math.floor(Math.random() * LOADING_MESSAGES.length),
   );
+  const [easterEgg, setEasterEgg] = useState(false);
   const [dotCount, setDotCount] = useState(1);
 
   useEffect(() => {
     const timer = setInterval(() => {
+      setEasterEgg(Math.random() < EASTER_EGG_CHANCE);
       setMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
     }, MESSAGE_INTERVAL_MS);
     return () => clearInterval(timer);
@@ -515,8 +578,8 @@ function BundlerLoadingText() {
           ))}
         </div>
       </div>
-      <p className="whitespace-nowrap text-center text-xl font-semibold tracking-[-0.01em] text-[#191c1d]">
-        {LOADING_MESSAGES[messageIndex]}
+      <p className="ml-4 whitespace-nowrap text-center text-xl font-semibold tracking-[-0.01em] text-[#191c1d]">
+        {easterEgg ? EASTER_EGG_MESSAGE : LOADING_MESSAGES[messageIndex]}
         <span className="inline-block w-6 text-left">{".".repeat(dotCount)}</span>
       </p>
     </div>
@@ -602,10 +665,12 @@ function FileSync({
   projectId,
   externalFiles,
   isStreaming,
+  onRecompilingChange,
 }: {
   projectId: string;
   externalFiles: Record<string, string>;
   isStreaming: boolean;
+  onRecompilingChange: (loading: boolean) => void;
 }) {
   const { sandpack } = useSandpack();
   const { activeFile } = sandpack;
@@ -669,6 +734,7 @@ function FileSync({
     }
 
     const startedAt = performance.now();
+    onRecompilingChange(true);
 
     sandpackRef.current
       .runSandpack()
@@ -685,8 +751,9 @@ function FileSync({
           error,
         });
         toast.error("El preview quedo desactualizado. Recargalo con el boton de refresh.");
-      });
-  }, [projectId]);
+      })
+      .finally(() => onRecompilingChange(false));
+  }, [projectId, onRecompilingChange]);
 
   useEffect(() => {
     if (isStreaming) {
@@ -695,6 +762,10 @@ function FileSync({
     }
     if (!rerunPendingRef.current) return;
 
+    // El aviso arranca ya (el turno termino, el preview todavia muestra la
+    // version vieja), no recien cuando arranca runSandpack() 2s despues.
+    onRecompilingChange(true);
+
     // Espera un tick para que updateFile termine de actualizar el estado interno
     // de Sandpack antes de iniciar el bundler.
     rerunTimerRef.current = setTimeout(rerun, RERUN_FALLBACK_MS);
@@ -702,7 +773,7 @@ function FileSync({
     return () => {
       if (rerunTimerRef.current) clearTimeout(rerunTimerRef.current);
     };
-  }, [isStreaming, rerun]);
+  }, [isStreaming, rerun, onRecompilingChange]);
 
   useEffect(() => {
     const current = sandpackRef.current;

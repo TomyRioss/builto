@@ -43,7 +43,7 @@ export function BuilderWorkspace({
 }: Props) {
   const [mobilePane, setMobilePane] = useState<"chat" | "preview">("chat");
 
-  const { messages, files, streamingProse, writingPath, isStreaming, send } =
+  const { messages, files, streamingProse, writingPath, isStreaming, isFixing, send } =
     useBuilderStream({ conversationId, initialMessages, initialFiles });
 
   return (
@@ -77,7 +77,10 @@ export function BuilderWorkspace({
             streamingProse={streamingProse}
             isStreaming={isStreaming}
             writingPath={writingPath}
+            isFixing={isFixing}
             files={files}
+            projectId={projectId}
+            projectName={projectName}
             onSend={send}
           />
         </div>

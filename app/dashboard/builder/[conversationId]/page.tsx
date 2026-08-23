@@ -35,6 +35,9 @@ export default async function BuilderConversationPage(
           images: Array.isArray((message.meta as { images?: string[] } | null)?.images)
             ? (message.meta as { images: string[] }).images
             : undefined,
+          suggestTicket: Boolean(
+            (message.meta as { suggestTicket?: boolean } | null)?.suggestTicket,
+          ),
         }))}
       initialFiles={withStarterFiles(filesToRecord(conversation.project.files))}
       returnTo={returnTo}

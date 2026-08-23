@@ -45,10 +45,11 @@ export default function TemplatesPage() {
             href={`/dashboard/templates/${template.slug}`}
             className="group flex flex-col justify-between gap-4 rounded-lg border border-[#f3f4f6] bg-[#ffffff] p-6 transition-colors hover:border-[#000000]"
           >
-            <div className="flex h-40 items-center justify-center overflow-hidden rounded bg-[#f9fafb]">
+            <div className="relative h-40 overflow-hidden rounded bg-[#f9fafb]">
               <iframe
                 src={`/templates/${template.slug}/index.html`}
-                className="h-[800px] w-[1400px] origin-top-left scale-[0.2857]"
+                className="absolute left-0 top-0 h-[800px] w-[1400px] origin-top-left"
+                style={{ transform: "scale(0.2857)" }}
                 tabIndex={-1}
                 aria-hidden
               />
