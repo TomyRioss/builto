@@ -1,0 +1,3 @@
+export default function DevProjectsLoading() {
+  return <div className="mx-auto w-full max-w-[1280px] animate-pulse px-4 py-8 sm:px-6 lg:px-10 lg:py-10" aria-busy="true" aria-label="Cargando proyectos disponibles"><div className="h-4 w-32 rounded bg-[#e1e3e4]" /><div className="mt-3 h-10 w-72 max-w-full rounded bg-[#d9dadb]" /><div className="mt-3 h-5 w-[28rem] max-w-full rounded bg-[#eceeef]" /><div className="mt-8 h-20 border-y border-[#e1e3e4] bg-[#f8f9fa]" /><div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 3 }, (_, index) => <div key={index} className="h-96 rounded-lg border border-[#e1e3e4] bg-[#f8f9fa]" />)}</div></div>;
+}

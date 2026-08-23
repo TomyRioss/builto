@@ -7,13 +7,17 @@ import {
   LuBlocks,
   LuChevronLeft,
   LuChevronRight,
+  LuFolderOpen,
+  LuLayoutDashboard,
   LuMessageSquare,
   LuSettings,
   LuTicket,
 } from "react-icons/lu";
 
 const items = [
+  { label: "Panel dev", href: "/dev/dashboard", Icon: LuLayoutDashboard },
   { label: "Co-Build", href: "/dashboard/builder", Icon: LuBlocks },
+  { label: "Proyectos", href: "/dashboard/projects", Icon: LuFolderOpen },
   { label: "Tickets", href: "/dashboard/tickets", Icon: LuTicket },
   { label: "Mensajes", href: "/dashboard/messages", Icon: LuMessageSquare },
   { label: "Configuracion", href: "/dashboard/config", Icon: LuSettings },

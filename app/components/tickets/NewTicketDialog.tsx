@@ -39,9 +39,15 @@ export function NewTicketDialog({ projects }: Props) {
 
   useEffect(() => {
     if (state.ok) {
-      setOpen(false);
-      toast.success("Ticket abierto.");
-    } else if (state.error) {
+      const timeoutId = window.setTimeout(() => {
+        setOpen(false);
+        toast.success("Ticket abierto.");
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    if (state.error) {
       toast.error(state.error);
     }
   }, [state]);

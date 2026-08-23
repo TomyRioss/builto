@@ -11,7 +11,10 @@ import { GoogleButton } from "./GoogleButton";
 export function LoginForm() {
   const router = useRouter();
   // proxy.ts manda aca con ?callbackUrl=<ruta protegida> al cortar la sesion.
-  const callbackUrl = useSearchParams().get("callbackUrl") ?? "/dashboard";
+  const callbackUrl = useSearchParams().get("callbackUrl");
+  const roleRedirectUrl = callbackUrl
+    ? `/auth/redirect?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : "/auth/redirect";
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -35,7 +38,7 @@ export function LoginForm() {
         return;
       }
 
-      router.push(callbackUrl);
+      router.push(roleRedirectUrl);
     } catch (error) {
       console.error("[auth] fallo la request de login", error);
       setError("No pudimos conectar con el servidor. Probá de nuevo.");
@@ -84,7 +87,7 @@ export function LoginForm() {
         <hr className="flex-1 border-0 border-t border-[#cfc4c5]" />
       </div>
 
-      <GoogleButton onError={setError} redirectTo={callbackUrl} />
+      <GoogleButton onError={setError} redirectTo={roleRedirectUrl} />
     </form>
   );
 }
