@@ -8,15 +8,17 @@ import {
   LuChevronLeft,
   LuChevronRight,
   LuFolderOpen,
-  LuLayoutDashboard,
+  LuCircleHelp,
+  LuHouse,
   LuMessageSquare,
+  LuPlus,
   LuSettings,
   LuTicket,
 } from "react-icons/lu";
 
 const items = [
-  { label: "Panel dev", href: "/dev/dashboard", Icon: LuLayoutDashboard },
-  { label: "Co-Build", href: "/dashboard/builder", Icon: LuBlocks },
+  { label: "Inicio", href: "/dashboard", Icon: LuHouse, exact: true },
+  { label: "Construir con IA", href: "/dashboard/builder", Icon: LuBlocks },
   { label: "Proyectos", href: "/dashboard/projects", Icon: LuFolderOpen },
   { label: "Tickets", href: "/dashboard/tickets", Icon: LuTicket },
   { label: "Mensajes", href: "/dashboard/messages", Icon: LuMessageSquare },
@@ -29,25 +31,26 @@ export function MainSidebar() {
 
   return (
     <aside
-      className={`relative w-full shrink-0 border-b border-[#cfc4c5] bg-[#ffffff] transition-[width] duration-200 md:border-b-0 md:border-r ${
+      className={`relative flex w-full shrink-0 flex-col border-b border-[#cfc4c5] bg-[#ffffff] transition-[width] duration-200 md:sticky md:top-[73px] md:h-[calc(100vh-73px)] md:self-start md:border-b-0 md:border-r ${
         collapsed ? "md:w-16" : "md:w-60"
       }`}
     >
-      <nav className="flex flex-row divide-x divide-[#cfc4c5] md:flex-col md:divide-x-0 md:divide-y md:border-b md:border-[#cfc4c5]">
-        {items.map(({ label, href, Icon }) => {
-          const active = pathname.startsWith(href);
+      <nav className="flex flex-row border-b border-[#cfc4c5] md:flex-col">
+        {items.map(({ label, href, Icon, exact }) => {
+          // "/dashboard" es prefijo de todas las rutas: solo matchea exacto.
+          const active = exact ? pathname === href : pathname.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
               aria-current={active ? "page" : undefined}
               title={collapsed ? label : undefined}
-              className={`flex flex-1 items-center justify-center gap-3 py-5 text-xs font-semibold uppercase leading-4 tracking-[0.05em] ${
+              className={`flex flex-1 items-center justify-center gap-3 border-l border-[#e1e3e4] py-5 text-xs font-semibold uppercase leading-4 tracking-[0.05em] first:border-l-0 md:border-l-0 md:border-t md:border-r-2 md:first:border-t-0 ${
                 collapsed ? "md:px-0" : "px-6"
               } ${
                 active
-                  ? "bg-[#edeeef] text-[#191c1d]"
-                  : "text-[#4c4546] hover:bg-[#edeeef] hover:text-[#191c1d]"
+                  ? "border-[#4648d4] bg-[#edeeef] text-[#4648d4] md:border-t-[#e1e3e4]"
+                  : "border-transparent text-[#4c4546] hover:bg-[#edeeef] hover:text-[#191c1d] md:border-t-[#e1e3e4]"
               }`}
             >
               <Icon className="size-4 shrink-0" aria-hidden />
@@ -56,6 +59,28 @@ export function MainSidebar() {
           );
         })}
       </nav>
+
+      <div className="mt-auto flex flex-col items-stretch gap-4 p-4">
+        <button
+          type="button"
+          title="Soporte"
+          className="flex items-center justify-center gap-2 rounded-lg py-1 text-[#4c4546] hover:text-[#191c1d]"
+        >
+          <LuCircleHelp className="size-6 shrink-0" aria-hidden />
+          <span className={`text-base font-medium ${collapsed ? "md:hidden" : undefined}`}>Soporte</span>
+        </button>
+
+        <Link
+          href="/dashboard/builder"
+          title={collapsed ? "Nuevo proyecto" : undefined}
+          className={`flex items-center justify-center gap-2 rounded-md bg-[#000000] py-3.5 text-sm font-medium text-[#ffffff] hover:bg-[#1b1b1b] ${
+            collapsed ? "md:size-11 md:px-0" : "px-4"
+          }`}
+        >
+          <LuPlus className="size-4 shrink-0" aria-hidden />
+          <span className={collapsed ? "md:hidden" : undefined}>Nuevo proyecto</span>
+        </Link>
+      </div>
 
       <button
         type="button"

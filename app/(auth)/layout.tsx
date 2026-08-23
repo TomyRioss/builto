@@ -1,14 +1,14 @@
+import Image from "next/image";
 import Link from "next/link";
+
+import logo from "@/public/logotext.png";
 
 export default function AuthLayout(props: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-full flex-1 flex-col bg-[#ffffff] text-[#191c1d] md:flex-row">
       <aside className="flex shrink-0 flex-col justify-between bg-[#000000] px-6 py-10 text-[#ffffff] md:w-[42%] md:max-w-[520px] md:px-10 md:py-12">
-        <Link
-          href="/"
-          className="text-2xl font-semibold uppercase tracking-[0.35em] text-[#ffffff] md:text-3xl md:tracking-[0.45em]"
-        >
-          Builto
+        <Link href="/" aria-label="Builto, inicio">
+          <Image src={logo} alt="Builto" priority className="h-11 w-auto md:h-12" />
         </Link>
 
         <div className="hidden md:block">

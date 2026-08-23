@@ -1,61 +1,38 @@
-import { LuArrowUp, LuSparkles } from "react-icons/lu";
+import { redirect } from "next/navigation";
+import { LuSparkles } from "react-icons/lu";
 
-// ponytail: mensajes mock, sin IA todavia
-const messages = [
-  { id: "1", from: "user", text: "Necesito una landing sobria para un estudio juridico." },
-  { id: "2", from: "ai", text: "Te propongo hero con claim corto, tres areas de practica y formulario de contacto al pie. Paleta monocromatica con un acento indigo." },
-  { id: "3", from: "user", text: "Sumale testimonios entre areas y contacto." },
-  { id: "4", from: "ai", text: "Listo. Tres testimonios en fila en desktop y carrusel en mobile." },
-];
+import { auth } from "@/auth";
+import { listConversations } from "@/lib/builder/queries";
+import { NewConversationButton } from "@/app/components/builder/NewConversationButton";
 
-export default function BuilderPage() {
+/** Sin id: cae en el ultimo proyecto tocado, o en el estado vacio. */
+export default async function BuilderIndexPage() {
+  const session = await auth();
+
+  if (!session?.user?.id) redirect("/login");
+
+  const [latest] = await listConversations(session.user.id);
+
+  if (latest) redirect(`/dashboard/builder/${latest.id}`);
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-3 border-b border-[#cfc4c5] bg-[#ffffff] px-4 py-4 md:px-8">
-        <span className="flex size-8 items-center justify-center rounded-md bg-[#edeeef] text-[#4648d4]">
-          <LuSparkles className="size-4" aria-hidden />
+    <div className="flex flex-1 items-center justify-center px-4 py-20 md:px-10">
+      <div className="flex max-w-[65ch] flex-col items-start gap-6">
+        <span className="flex size-10 items-center justify-center rounded-md bg-[#eef2ff] text-[#4648d4]">
+          <LuSparkles className="size-5" aria-hidden />
         </span>
-        <h1 className="truncate text-base font-medium leading-6">
-          Landing para estudio juridico
+
+        <h1 className="text-3xl font-semibold leading-9 tracking-[-0.02em] text-[#191c1d]">
+          Empeza tu primer sitio
         </h1>
-      </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-8 md:px-8">
-        <div className="mx-auto flex w-full max-w-[720px] flex-col gap-6">
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              className={m.from === "user" ? "flex justify-end" : "flex justify-start"}
-            >
-              <p
-                className={`max-w-[85%] rounded-lg px-4 py-3 text-base leading-6 ${
-                  m.from === "user"
-                    ? "bg-[#000000] text-[#ffffff]"
-                    : "border border-[#cfc4c5] bg-[#ffffff] text-[#191c1d]"
-                }`}
-              >
-                {m.text}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+        <p className="text-base leading-6 text-[#4c4546]">
+          Describi lo que necesitas y la IA va a escribir los archivos del sitio. Los
+          vas a ver renderizarse a la derecha mientras los escribe, y podes editarlos
+          a mano cuando quieras.
+        </p>
 
-      <div className="border-t border-[#cfc4c5] bg-[#ffffff] px-4 py-4 md:px-8">
-        <div className="mx-auto flex w-full max-w-[720px] items-center gap-3 rounded-lg border border-[#cfc4c5] bg-[#ffffff] px-4 py-3 focus-within:border-[#4648d4]">
-          <input
-            type="text"
-            placeholder="Escribi que queres construir"
-            className="min-w-0 flex-1 bg-transparent text-base leading-6 text-[#191c1d] outline-none placeholder:text-[#7e7576]"
-          />
-          <button
-            type="button"
-            aria-label="Enviar"
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1b]"
-          >
-            <LuArrowUp className="size-4" aria-hidden />
-          </button>
-        </div>
+        <NewConversationButton />
       </div>
     </div>
   );

@@ -6,6 +6,11 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { TicketStatus } from "@/app/generated/prisma/enums";
+import {
+  MAX_FILES,
+  removeTicketAttachments,
+  uploadTicketAttachments,
+} from "@/lib/storage/ticket-attachments";
 
 export type ActionState = { ok: boolean; error: string | null };
 
@@ -58,14 +63,65 @@ export async function openTicket(
       return { ok: false, error: "Ese proyecto no es tuyo." };
     }
 
-    await prisma.ticket.create({
+    // Imagenes de referencia: opcionales. El cliente ya las comprime a webp.
+    const files = formData
+      .getAll("attachments")
+      .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+
+    if (files.length > MAX_FILES) {
+      return { ok: false, error: `Podes adjuntar hasta ${MAX_FILES} imagenes.` };
+    }
+
+    const ticket = await prisma.ticket.create({
       data: {
         projectId,
         createdById: session.user.id,
         title,
         description,
       },
+      select: { id: true },
     });
+
+    if (files.length > 0) {
+      let uploaded;
+      try {
+        uploaded = await uploadTicketAttachments({
+          ticketId: ticket.id,
+          uploaderId: session.user.id,
+          files,
+        });
+      } catch (error) {
+        // El ticket ya existe: no lo perdemos por una imagen que no subio.
+        console.error("[tickets] fallo la subida de adjuntos", {
+          userId: session.user.id,
+          ticketId: ticket.id,
+          count: files.length,
+          error,
+        });
+        revalidatePath("/dashboard/tickets");
+        return {
+          ok: false,
+          error:
+            error instanceof Error
+              ? `Abrimos el ticket pero no pudimos subir las imagenes: ${error.message}`
+              : "Abrimos el ticket pero no pudimos subir las imagenes.",
+        };
+      }
+
+      try {
+        await prisma.ticketAttachment.createMany({
+          data: uploaded.map((file) => ({
+            ticketId: ticket.id,
+            uploaderId: session.user.id,
+            ...file,
+          })),
+        });
+      } catch (error) {
+        // Sin fila en la base el binario no lo lista nadie: lo sacamos.
+        await removeTicketAttachments(uploaded.map((f) => f.storageKey));
+        throw error;
+      }
+    }
   } catch (error) {
     console.error("[tickets] fallo al abrir ticket", {
       userId: session.user.id,

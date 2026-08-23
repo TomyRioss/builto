@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LuCircleAlert, LuTicket } from "react-icons/lu";
+import { LuCircleAlert, LuTicket, LuCircleCheck, LuFolder } from "react-icons/lu";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -59,7 +59,17 @@ export default async function TicketsPage() {
           status: true,
           createdAt: true,
           createdById: true,
-          project: { select: { name: true } },
+          project: {
+            select: {
+              name: true,
+              conversations: {
+                where: { kind: "AI" },
+                orderBy: { updatedAt: "desc" },
+                take: 1,
+                select: { id: true },
+              },
+            },
+          },
           createdBy: { select: { name: true, email: true } },
           // Cotizacion vigente: la ultima enviada.
           quotes: {
@@ -73,7 +83,7 @@ export default async function TicketsPage() {
       prisma.project.findMany({
         where: { ownerId: userId },
         orderBy: { updatedAt: "desc" },
-        select: { id: true, name: true },
+        select: { id: true, name: true, thumbnail: true },
       }),
     ]);
   } catch (error) {
@@ -101,6 +111,17 @@ export default async function TicketsPage() {
     );
   }
 
+  const now = new Date();
+  const activeCount = tickets.filter(
+    (t) => !["DONE", "REJECTED", "CANCELLED"].includes(t.status),
+  ).length;
+  const completedThisMonth = tickets.filter(
+    (t) =>
+      t.status === "DONE" &&
+      t.createdAt.getMonth() === now.getMonth() &&
+      t.createdAt.getFullYear() === now.getFullYear(),
+  ).length;
+
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 py-8 md:px-10 md:py-10">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -127,41 +148,112 @@ export default async function TicketsPage() {
         )}
       </div>
 
+      <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-[#f3f4f5] bg-[#ffffff] p-6">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase leading-4 tracking-[0.05em] text-[#7e7576]">
+              Tickets activos
+            </span>
+            <LuTicket className="size-5 text-[#4648d4]" aria-hidden />
+          </div>
+          <p className="mt-3 text-[32px] font-semibold leading-10 tracking-[-0.01em]">
+            {activeCount}
+          </p>
+        </div>
+        <div className="rounded-lg border border-[#f3f4f5] bg-[#ffffff] p-6">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase leading-4 tracking-[0.05em] text-[#7e7576]">
+              Completados (mes)
+            </span>
+            <LuCircleCheck className="size-5 text-green-600" aria-hidden />
+          </div>
+          <p className="mt-3 text-[32px] font-semibold leading-10 tracking-[-0.01em]">
+            {completedThisMonth}
+          </p>
+        </div>
+      </div>
+
       {tickets.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center gap-3 border-y border-[#cfc4c5] bg-[#ffffff] px-6 py-20 text-center">
+        <div className="mt-8 flex flex-col items-center gap-3 rounded-lg border border-[#f3f4f5] bg-[#ffffff] px-6 py-20 text-center">
           <LuTicket className="size-6 text-[#7e7576]" aria-hidden />
           <p className="text-sm leading-5 text-[#4c4546]">
             Todavia no hay tickets abiertos.
           </p>
         </div>
       ) : (
-        <ul className="mt-8 divide-y divide-[#cfc4c5] border-y border-[#cfc4c5] bg-[#ffffff]">
-          {tickets.map((ticket) => {
-            const status = STATUS[ticket.status];
-            const mine = ticket.createdById === userId;
-            const quote = ticket.quotes[0];
+        <div className="mt-8 overflow-hidden rounded-lg border border-[#f3f4f5] bg-[#ffffff]">
+          <div className="hidden grid-cols-12 border-b border-[#f3f4f5] px-6 py-4 md:grid">
+            <div className="col-span-2 text-[11px] font-semibold uppercase leading-4 tracking-[0.05em] text-[#7e7576]">
+              ID / Fecha
+            </div>
+            <div className="col-span-6 text-[11px] font-semibold uppercase leading-4 tracking-[0.05em] text-[#7e7576]">
+              Asunto
+            </div>
+            <div className="col-span-2 text-[11px] font-semibold uppercase leading-4 tracking-[0.05em] text-[#7e7576]">
+              Estado
+            </div>
+            <div className="col-span-2 text-right text-[11px] font-semibold uppercase leading-4 tracking-[0.05em] text-[#7e7576]">
+              Acción
+            </div>
+          </div>
 
-            return (
-              <li
-                key={ticket.id}
-                className="flex flex-col gap-4 px-4 py-5 md:flex-row md:items-start md:gap-6 md:px-6"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-medium leading-6">
-                    {ticket.title}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#4c4546]">
-                    {ticket.description}
-                  </p>
-                  <p className="mt-2 text-xs leading-4 text-[#7e7576]">
-                    {ticket.project.name}
-                    {staff
-                      ? ` · ${ticket.createdBy.name ?? ticket.createdBy.email}`
-                      : ""}
-                  </p>
+          <ul className="divide-y divide-[#f3f4f5]">
+            {tickets.map((ticket) => {
+              const status = STATUS[ticket.status];
+              const mine = ticket.createdById === userId;
+              const quote = ticket.quotes[0];
 
-                  {mine && (
-                    <div className="mt-4">
+              return (
+                <li
+                  key={ticket.id}
+                  className="grid grid-cols-1 gap-3 px-4 py-5 md:grid-cols-12 md:items-center md:gap-0 md:px-6"
+                >
+                  <div className="md:col-span-2">
+                    <p className="text-sm font-medium leading-5">#{ticket.id.slice(-4)}</p>
+                    <p className="mt-0.5 text-xs leading-4 text-[#7e7576]">
+                      {dateFmt.format(ticket.createdAt)}
+                    </p>
+                  </div>
+
+                  <div className="min-w-0 md:col-span-6">
+                    <p className="truncate text-base font-medium leading-6">
+                      {ticket.title}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#4c4546]">
+                      {ticket.description}
+                    </p>
+                    <p className="mt-1 flex items-center gap-1 text-xs leading-4 text-[#7e7576]">
+                      {ticket.project.conversations[0] ? (
+                        <Link
+                          href={`/dashboard/builder/${ticket.project.conversations[0].id}`}
+                          className="inline-flex items-center gap-1 text-[#4648d4] hover:underline"
+                        >
+                          <LuFolder className="size-3" aria-hidden />
+                          {ticket.project.name}
+                        </Link>
+                      ) : (
+                        <span className="inline-flex items-center gap-1">
+                          <LuFolder className="size-3" aria-hidden />
+                          {ticket.project.name}
+                        </span>
+                      )}
+                      {staff
+                        ? ` · ${ticket.createdBy.name ?? ticket.createdBy.email}`
+                        : ""}
+                    </p>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold uppercase leading-4 tracking-[0.05em] ${status.chip}`}
+                    >
+                      <span className="size-1.5 rounded-full bg-current" />
+                      {status.label}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-start gap-2 md:col-span-2 md:justify-end">
+                    {mine ? (
                       <TicketActions
                         ticketId={ticket.id}
                         quote={
@@ -174,24 +266,19 @@ export default async function TicketsPage() {
                         }
                         cancelable={CANCELABLE.includes(ticket.status)}
                       />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex shrink-0 items-center gap-4 md:w-56 md:justify-end">
-                  <span
-                    className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase leading-4 tracking-[0.05em] ${status.chip}`}
-                  >
-                    {status.label}
-                  </span>
-                  <span className="text-xs leading-4 text-[#7e7576]">
-                    {dateFmt.format(ticket.createdAt)}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                    ) : null}
+                    <Link
+                      href={`/dashboard/tickets/${ticket.id}`}
+                      className="inline-flex items-center justify-center rounded-md border border-[#191c1d] px-5 py-3 text-xs font-semibold uppercase tracking-[0.05em] text-[#191c1d] hover:bg-[#edeeef]"
+                    >
+                      Ver detalle
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );

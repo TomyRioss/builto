@@ -112,9 +112,14 @@ model Project {
   id        String        @id @default(cuid())
   ownerId   String
   name      String
+  /// true cuando el usuario renombro a mano: la IA deja de retitularlo.
+  nameSetByUser Boolean   @default(false)
   slug      String        @unique
   status    ProjectStatus @default(DRAFT)
   brief     Json? // salida estructurada del onboarding conversacional
+  /// Captura del preview en dataURL (webp). La toma el sandbox y la usa el
+  /// dashboard para mostrar el proyecto sin re-bundlear nada.
+  thumbnail String?       @db.Text
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -234,11 +239,29 @@ model Ticket {
   quotes        Quote[]
   transactions  Transaction[]
   conversations Conversation[]
+  attachments   TicketAttachment[]
 
   @@index([status])
   @@index([assignedDevId])
   @@index([createdById])
   @@index([projectId])
+}
+
+/// Imagenes de referencia que el cliente adjunta al abrir el ticket.
+/// El binario vive en Supabase Storage (bucket privado "ticket-attachments");
+/// aca solo queda la llave y los metadatos para listar y firmar URLs.
+model TicketAttachment {
+  id         String   @id @default(cuid())
+  ticketId   String
+  uploaderId String
+  storageKey String   @unique
+  mimeType   String
+  size       Int
+  createdAt  DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
 }
 
 /// Un ticket puede recotizarse: la vigente es la ultima SENT o ACCEPTED.
@@ -298,6 +321,9 @@ model Conversation {
   kind      ConversationKind
   projectId String?
   ticketId  String?
+  // Objetivo del chat, se refina solo cada pocos turnos. Reemplaza mandar el
+  // historial entero como contexto de "para que es esto".
+  purpose   String?          @db.Text
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
