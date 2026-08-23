@@ -1,0 +1,15 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { InviteStaffForm, StaffControls } from "@/components/admin/team-controls";
+import { getAdminTeam } from "@/lib/admin/queries";
+import { canManageStaff } from "@/lib/permissions";
+
+export const dynamic = "force-dynamic";
+const date = new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" });
+
+export default async function AdminTeamPage() {
+  const session = await auth();
+  if (!session?.user || !canManageStaff(session.user.role)) redirect("/admin/dashboard");
+  const { users, invites } = await getAdminTeam();
+  return <div className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 lg:px-10"><header><p className="text-sm font-medium text-[#4648d4]">Solo Owner</p><h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Equipo</h1><p className="mt-3 text-sm text-[#666768]">Invita staff, administra roles y controla accesos internos.</p></header><section className="mt-8 rounded-lg border border-[#d9dadb] p-5 sm:p-6"><h2 className="font-semibold">Invitar integrante</h2><p className="mt-1 text-sm text-[#666768]">El enlace vence en siete dias y solo funciona para el email indicado.</p><div className="mt-5"><InviteStaffForm /></div></section><section className="mt-8 overflow-hidden rounded-lg border border-[#d9dadb]"><div className="border-b border-[#e1e3e4] p-5"><h2 className="font-semibold">Usuarios internos</h2><p className="mt-1 text-sm text-[#666768]">{users.length} integrantes registrados.</p></div><ul className="divide-y divide-[#eceeef]">{users.map((user) => <li key={user.id} className="flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><p className="truncate font-semibold">{user.name ?? "Sin nombre"}</p><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${user.isActive ? "bg-[#ecf9f1] text-[#187342]" : "bg-[#f3f4f5] text-[#777879]"}`}>{user.isActive ? "Activo" : "Desactivado"}</span></div><p className="mt-1 truncate text-sm text-[#666768]">{user.email}</p><p className="mt-1 text-xs text-[#777879]">{user._count.ticketsAssigned} tickets asignados · Alta {date.format(user.createdAt)}</p></div>{user.role === "OWNER" ? <span className="rounded bg-black px-3 py-1.5 text-xs font-medium text-white">OWNER</span> : <StaffControls userId={user.id} role={user.role} active={user.isActive} />}</li>)}</ul></section><section className="mt-8 overflow-hidden rounded-lg border border-[#d9dadb]"><div className="border-b border-[#e1e3e4] p-5"><h2 className="font-semibold">Invitaciones pendientes</h2></div>{invites.length === 0 ? <p className="p-8 text-center text-sm text-[#666768]">No hay invitaciones pendientes.</p> : <ul className="divide-y divide-[#eceeef]">{invites.map((invite) => <li key={invite.id} className="flex items-center justify-between gap-4 px-5 py-4"><div><p className="text-sm font-medium">{invite.email}</p><p className="mt-1 text-xs text-[#777879]">Vence {date.format(invite.expiresAt)}</p></div><span className="rounded bg-[#eef0ff] px-2.5 py-1 text-xs text-[#4648d4]">{invite.role}</span></li>)}</ul>}</section></div>;
+}

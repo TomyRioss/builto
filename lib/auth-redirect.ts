@@ -5,5 +5,7 @@ export function getPostLoginPath(role: Role, callbackUrl?: string | string[]) {
     return callbackUrl;
   }
 
-  return role === "DEV" ? "/dev/dashboard" : "/dashboard";
+  if (role === "DEV") return "/dev/dashboard";
+  if (role === "ADMIN" || role === "OWNER") return "/admin/dashboard";
+  return "/dashboard";
 }

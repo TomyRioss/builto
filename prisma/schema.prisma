@@ -109,19 +109,19 @@ enum AuthorKind {
 }
 
 model Project {
-  id        String        @id @default(cuid())
-  ownerId   String
-  name      String
+  id            String        @id @default(cuid())
+  ownerId       String
+  name          String
   /// true cuando el usuario renombro a mano: la IA deja de retitularlo.
-  nameSetByUser Boolean   @default(false)
-  slug      String        @unique
-  status    ProjectStatus @default(DRAFT)
-  brief     Json? // salida estructurada del onboarding conversacional
+  nameSetByUser Boolean       @default(false)
+  slug          String        @unique
+  status        ProjectStatus @default(DRAFT)
+  brief         Json? // salida estructurada del onboarding conversacional
   /// Captura del preview en dataURL (webp). La toma el sandbox y la usa el
   /// dashboard para mostrar el proyecto sin re-bundlear nada.
-  thumbnail String?       @db.Text
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  thumbnail     String?       @db.Text
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   owner         User             @relation("ProjectOwner", fields: [ownerId], references: [id])
   files         ProjectFile[]
@@ -233,9 +233,9 @@ model Ticket {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy     User           @relation("TicketCreator", fields: [createdById], references: [id])
-  assignedDev   User?          @relation("TicketDev", fields: [assignedDevId], references: [id])
+  project       Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy     User               @relation("TicketCreator", fields: [createdById], references: [id])
+  assignedDev   User?              @relation("TicketDev", fields: [assignedDevId], references: [id])
   quotes        Quote[]
   transactions  Transaction[]
   conversations Conversation[]
@@ -266,15 +266,16 @@ model TicketAttachment {
 
 /// Un ticket puede recotizarse: la vigente es la ultima SENT o ACCEPTED.
 model Quote {
-  id          String      @id @default(cuid())
-  ticketId    String
-  amount      Decimal     @db.Decimal(12, 2)
-  currency    String      @default("ARS")
-  notes       String?     @db.Text
-  createdById String
-  status      QuoteStatus @default(SENT)
-  expiresAt   DateTime?
-  createdAt   DateTime    @default(now())
+  id            String      @id @default(cuid())
+  ticketId      String
+  amount        Decimal     @db.Decimal(12, 2)
+  currency      String      @default("ARS")
+  estimatedDays Int?
+  notes         String?     @db.Text
+  createdById   String
+  status        QuoteStatus @default(SENT)
+  expiresAt     DateTime?
+  createdAt     DateTime    @default(now())
 
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 

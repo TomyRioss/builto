@@ -86,6 +86,7 @@ export default async function TicketDetailPage({
             id: true,
             amount: true,
             currency: true,
+            estimatedDays: true,
             notes: true,
             status: true,
             createdAt: true,
@@ -413,6 +414,7 @@ export default async function TicketDetailPage({
                   ? {
                       amount: activeQuote.amount.toFixed(2),
                       currency: activeQuote.currency,
+                      estimatedDays: activeQuote.estimatedDays,
                     }
                   : null
               }

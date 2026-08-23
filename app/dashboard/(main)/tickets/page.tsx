@@ -76,7 +76,7 @@ export default async function TicketsPage() {
             where: { status: "SENT" },
             orderBy: { createdAt: "desc" },
             take: 1,
-            select: { amount: true, currency: true },
+            select: { amount: true, currency: true, estimatedDays: true },
           },
         },
       }),
@@ -261,6 +261,7 @@ export default async function TicketsPage() {
                             ? {
                                 amount: quote.amount.toFixed(2),
                                 currency: quote.currency,
+                                estimatedDays: quote.estimatedDays,
                               }
                             : null
                         }

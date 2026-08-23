@@ -118,10 +118,10 @@ export function useBuilderStream({
         }
         flush();
       } catch (error) {
-        console.error("[builder] fallo el turno de la IA", {
+        console.warn("[builder] fallo el turno de la IA", {
           conversationId,
           recibido: rawRef.current.length,
-          error,
+          message: error instanceof Error ? error.message : String(error),
         });
         toast.error(
           error instanceof Error ? error.message : "No pudimos hablar con la IA.",

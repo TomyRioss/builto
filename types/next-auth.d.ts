@@ -6,11 +6,13 @@ declare module "next-auth" {
     user: {
       id: string;
       role: Role;
+      isActive: boolean;
     } & DefaultSession["user"];
   }
 
   interface User {
     role: Role;
+    isActive?: boolean;
   }
 }
 
