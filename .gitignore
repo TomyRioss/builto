@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/.builder-sandbox
 /.pnp
 .pnp.*
 .yarn/*

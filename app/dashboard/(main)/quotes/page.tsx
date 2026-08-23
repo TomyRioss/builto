@@ -12,8 +12,8 @@ export const dynamic = "force-dynamic";
 const date = new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" });
 const quoteStatus = { SENT: "Esperando tu respuesta", ACCEPTED: "Aceptada", REJECTED: "Rechazada", EXPIRED: "Vencida" } as const;
 
-function money(amount: { toNumber(): number }, currency: string) {
-  return new Intl.NumberFormat("es-AR", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount.toNumber());
+function money(amount: { toNumber(): number }) {
+  return new Intl.NumberFormat("es-AR", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(amount.toNumber());
 }
 
 type ClientQuotesPageProps = {
@@ -63,10 +63,10 @@ export default async function ClientQuotesPage({ searchParams }: ClientQuotesPag
                   <span className="shrink-0 rounded-full bg-[#eef0ff] px-2.5 py-1 text-xs font-medium text-[#4648d4]">Por pagar</span>
                 </div>
                 <div className="mt-5 flex flex-col gap-4 border-y border-[#eceeef] py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div><p className="text-xs text-[#777879]">Total</p><p className="mt-1 text-2xl font-semibold">{money(quote.amount, quote.currency)}</p></div>
+                  <div><p className="text-xs text-[#777879]">Total</p><p className="mt-1 text-2xl font-semibold">{money(quote.amount)}</p></div>
                   <SimulatedPaymentDialog
                     quoteId={quote.id}
-                    amount={money(quote.amount, quote.currency)}
+                    amount={money(quote.amount)}
                     defaultOpen={pay === quote.id}
                   />
                 </div>
@@ -87,7 +87,7 @@ export default async function ClientQuotesPage({ searchParams }: ClientQuotesPag
             {pendingResponse.map((quote) => (
               <article key={quote.id} className="rounded-lg border border-[#c9caff] bg-white p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="text-xs font-semibold uppercase text-[#4648d4]">{quote.ticket.project.name}</p><h3 className="mt-2 truncate text-lg font-semibold">{quote.ticket.title}</h3></div><span className="shrink-0 rounded-full bg-[#eef0ff] px-2.5 py-1 text-xs text-[#4648d4]">Pendiente</span></div>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2"><div className="rounded-md bg-[#f8f9fa] p-4"><p className="text-xs text-[#777879]">Precio total</p><p className="mt-2 text-2xl font-semibold">{money(quote.amount, quote.currency)}</p></div><div className="rounded-md bg-[#f8f9fa] p-4"><p className="text-xs text-[#777879]">Tiempo estimado</p><p className="mt-2 text-lg font-semibold">{quote.estimatedDays ? `${quote.estimatedDays} dias habiles` : "A definir"}</p></div></div>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2"><div className="rounded-md bg-[#f8f9fa] p-4"><p className="text-xs text-[#777879]">Precio total</p><p className="mt-2 text-2xl font-semibold">{money(quote.amount)}</p></div><div className="rounded-md bg-[#f8f9fa] p-4"><p className="text-xs text-[#777879]">Tiempo estimado</p><p className="mt-2 text-lg font-semibold">{quote.estimatedDays ? `${quote.estimatedDays} dias habiles` : "A definir"}</p></div></div>
                 {quote.notes && <div className="mt-5"><p className="text-xs font-semibold uppercase text-[#777879]">Alcance y condiciones</p><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#4c4546]">{quote.notes}</p></div>}
                 <div className="mt-5 flex flex-wrap gap-4 border-t border-[#eceeef] pt-4 text-xs text-[#777879]"><span className="inline-flex items-center gap-1.5"><LuCalendar className="size-4" />Enviada {date.format(quote.createdAt)}</span>{quote.expiresAt && <span className="inline-flex items-center gap-1.5"><LuClock className="size-4" />Vence {date.format(quote.expiresAt)}</span>}</div>
                 <div className="mt-5"><QuoteResponseButtons ticketId={quote.ticket.id} /></div>
@@ -106,7 +106,7 @@ export default async function ClientQuotesPage({ searchParams }: ClientQuotesPag
               <thead className="border-b border-[#e1e3e4] bg-[#f8f9fa] text-xs uppercase text-[#777879]"><tr><th className="px-5 py-3">Ticket</th><th>Importe</th><th>Tiempo</th><th>Estado</th><th>Fecha</th></tr></thead>
               <tbody className="divide-y divide-[#eceeef]">{history.map((quote) => {
                 const paid = quote.status === "ACCEPTED" && quote.ticket.status === "PAID";
-                return <tr key={quote.id}><td className="px-5 py-4"><Link href={`/dashboard/tickets/${quote.ticket.id}`} className="font-medium hover:text-[#4648d4]">{quote.ticket.title}</Link><p className="mt-1 text-xs text-[#777879]">{quote.ticket.project.name}</p></td><td>{money(quote.amount, quote.currency)}</td><td>{quote.estimatedDays ? `${quote.estimatedDays} dias` : "-"}</td><td>{paid ? <span className="inline-flex items-center gap-1.5 text-[#08783e]"><LuCheck className="size-4" />Pagada</span> : quoteStatus[quote.status]}</td><td>{date.format(quote.createdAt)}</td></tr>;
+                return <tr key={quote.id}><td className="px-5 py-4"><Link href={`/dashboard/tickets/${quote.ticket.id}`} className="font-medium hover:text-[#4648d4]">{quote.ticket.title}</Link><p className="mt-1 text-xs text-[#777879]">{quote.ticket.project.name}</p></td><td>{money(quote.amount)}</td><td>{quote.estimatedDays ? `${quote.estimatedDays} dias` : "-"}</td><td>{paid ? <span className="inline-flex items-center gap-1.5 text-[#08783e]"><LuCheck className="size-4" />Pagada</span> : quoteStatus[quote.status]}</td><td>{date.format(quote.createdAt)}</td></tr>;
               })}</tbody>
             </table>
           </div>

@@ -47,7 +47,7 @@ export default function Home() {
           <section id="comenzar" className="flex flex-col items-center px-4 py-20 text-center md:py-24"><h2 className="text-2xl font-semibold tracking-[-0.025em] text-black sm:text-3xl">¿Listo para construir tu próxima idea?</h2><ButtonLink href="/register" className="mt-8 px-8 py-4">Comenzar</ButtonLink></section>
         </RevealSection>
       </main>
-      <footer className="border-t border-[#e1e3e4] bg-white px-4 py-8 sm:px-6 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 text-xs text-[#4c4546] sm:flex-row"><p>© 2026 Builto. Todos los derechos reservados.</p><nav aria-label="Enlaces legales" className="flex gap-6"><a className="transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-offset-4" href="#">Privacidad</a><a className="transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-offset-4" href="#">Términos</a></nav></div></footer>
+      <footer className="border-t border-[#e1e3e4] bg-white px-4 py-8 sm:px-6 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 text-xs text-[#4c4546] sm:flex-row"><p>© 2026 Builto. Todos los derechos reservados.</p><nav aria-label="Enlaces legales" className="flex gap-6"><a className="transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-offset-4" href="#">Privacidad</a><a className="transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-offset-4" href="/terminos">Términos</a></nav></div></footer>
     </div>
   );
 }
