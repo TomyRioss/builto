@@ -133,6 +133,18 @@ export async function getDevProjectDetail(projectId: string) {
             createdAt: true,
             updatedAt: true,
             assignedDev: { select: { name: true, email: true } },
+            conversations: {
+              where: { kind: "TICKET" },
+              take: 1,
+              select: {
+                messages: {
+                  where: { senderKind: { in: ["USER", "ADMIN"] } },
+                  orderBy: { createdAt: "desc" },
+                  take: 10,
+                  select: { id: true, body: true, senderKind: true, createdAt: true, sender: { select: { name: true, email: true } } },
+                },
+              },
+            },
           },
           orderBy: { updatedAt: "desc" },
         },

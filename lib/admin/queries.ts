@@ -44,6 +44,14 @@ export async function getAdminTicket(ticketId: string) {
   });
 }
 
+export async function getAssignableDevelopers() {
+  return prisma.user.findMany({
+    where: { role: "DEV", isActive: true },
+    select: { id: true, name: true, email: true, _count: { select: { ticketsAssigned: { where: { status: { in: ["PAID", "IN_PROGRESS", "REVIEW"] } } } } } },
+    orderBy: { name: "asc" },
+  });
+}
+
 export async function getAdminPayments() {
   const [acceptedQuotes, transactions] = await Promise.all([
     prisma.quote.findMany({

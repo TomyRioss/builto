@@ -9,6 +9,12 @@ const actions: Record<string, string> = {
   "ticket.started": "Trabajo iniciado",
   "ticket.sent_to_review": "Enviado a revision",
   "payment.confirmed": "Pago confirmado",
+  "payment.simulated": "Pago simulado acreditado",
+  "ticket.admin_review_approved": "Revision interna aprobada",
+  "ticket.admin_changes_requested": "Admin solicito cambios",
+  "ticket.client_review_approved": "Cliente aprobo la entrega",
+  "ticket.client_changes_requested": "Cliente solicito cambios",
+  "ticket.review_ai_opened": "Cliente abrio ajustes con IA",
 };
 
 export default async function AdminAuditPage() {

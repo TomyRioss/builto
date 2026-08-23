@@ -8,6 +8,7 @@ import {
   LuChevronLeft,
   LuChevronRight,
   LuFolderOpen,
+  LuFileText,
   LuCircleHelp,
   LuHouse,
   LuMessageSquare,
@@ -21,6 +22,7 @@ const items = [
   { label: "Construir con IA", href: "/dashboard/builder", Icon: LuBlocks },
   { label: "Proyectos", href: "/dashboard/projects", Icon: LuFolderOpen },
   { label: "Tickets", href: "/dashboard/tickets", Icon: LuTicket },
+  { label: "Cotizaciones", href: "/dashboard/quotes", Icon: LuFileText },
   { label: "Mensajes", href: "/dashboard/messages", Icon: LuMessageSquare },
   { label: "Configuracion", href: "/dashboard/config", Icon: LuSettings },
 ];

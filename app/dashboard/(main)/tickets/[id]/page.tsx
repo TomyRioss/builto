@@ -6,6 +6,7 @@ import {
   LuCheck,
   LuCircleAlert,
   LuFileText,
+  LuEye,
   LuRefreshCw,
   LuTicket,
 } from "react-icons/lu";
@@ -17,6 +18,7 @@ import type { TicketStatus } from "@/app/generated/prisma/enums";
 import { TicketActions } from "@/app/components/tickets/TicketActions";
 import { ticketProgress } from "@/lib/dashboard/ticket-progress";
 import { signAttachmentUrls } from "@/lib/storage/ticket-attachments";
+import { getReviewStage } from "@/lib/tickets/review";
 
 export const dynamic = "force-dynamic";
 
@@ -118,6 +120,8 @@ export default async function TicketDetailPage({
 
   if (!ticket) notFound();
 
+  const reviewStage = ticket.status === "REVIEW" ? await getReviewStage(ticket.id) : null;
+
   const status = STATUS[ticket.status];
   const mine = ticket.createdById === userId;
   const activeQuote = ticket.quotes.find((q) => q.status === "SENT");
@@ -202,6 +206,8 @@ export default async function TicketDetailPage({
           {status.label}
         </span>
       </header>
+
+      {ticket.status === "REVIEW" && <section className="mt-6 flex flex-col gap-4 rounded-lg border border-[#c9caff] bg-[#fafaff] p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold">{reviewStage === "CLIENT" ? "La entrega esta lista para tu revision" : "Revision interna en curso"}</h2><p className="mt-1 text-sm text-[#666768]">{reviewStage === "CLIENT" ? "Visualiza los cambios, aprueba el trabajo o envia feedback al Developer." : "El equipo esta comprobando la entrega antes de mostrartela."}</p></div>{reviewStage === "CLIENT" && <Link href={`/dashboard/tickets/${ticket.id}/review`} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-[#4648d4] px-5 text-sm font-medium text-white"><LuEye className="size-4" />Revisar entrega</Link>}</section>}
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="flex flex-col gap-8 lg:col-span-8">
