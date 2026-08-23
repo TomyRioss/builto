@@ -13,7 +13,7 @@ import {
 type Props = {
   ticketId: string;
   /** Cotizacion vigente, solo cuando el ticket esta en QUOTED. */
-  quote: { amount: string; currency: string } | null;
+  quote: { amount: string; currency: string; estimatedDays: number | null } | null;
   cancelable: boolean;
 };
 
@@ -44,6 +44,7 @@ export function TicketActions({ ticketId, quote, cancelable }: Props) {
         <>
           <span className="text-sm font-medium leading-5">
             {quote.currency} {quote.amount}
+            {quote.estimatedDays ? ` · ${quote.estimatedDays} dias habiles` : ""}
           </span>
           <Button
             size="sm"

@@ -96,6 +96,74 @@ const saveFileSchema = z.object({
   content: z.string().max(200_000, "El archivo es demasiado grande."),
 });
 
+const importFilesSchema = z.object({
+  projectId: z.string().min(1),
+  files: z.array(z.object({
+    path: z.string().trim().min(1).max(200),
+    content: z.string().max(200_000, "Uno de los archivos es demasiado grande."),
+  })).min(1, "El ZIP no contiene archivos importables.").max(200, "El proyecto supera los 200 archivos."),
+});
+
+/** Reemplaza el snapshot editable con el ZIP importado por un usuario autorizado. */
+export async function importProjectFiles(input: {
+  projectId: string;
+  files: { path: string; content: string }[];
+}): Promise<ActionState> {
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false, error: "Inicia sesion de nuevo." };
+
+  const parsed = importFilesSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const files = parsed.data.files.map((file) => ({
+    path: normalizePath(file.path),
+    content: file.content,
+  }));
+  const paths = new Set(files.map((file) => file.path));
+  if (paths.size !== files.length) return { ok: false, error: "El ZIP contiene rutas duplicadas." };
+
+  const totalSize = files.reduce((total, file) => total + file.content.length, 0);
+  if (totalSize > 4_000_000) return { ok: false, error: "El proyecto supera el limite de 4 MB." };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const project = await tx.project.findFirst({
+        where: {
+          id: parsed.data.projectId,
+          OR: [
+            { ownerId: session.user.id },
+            { tickets: { some: { assignedDevId: session.user.id, status: "IN_PROGRESS" } } },
+          ],
+        },
+        select: { id: true },
+      });
+      if (!project) throw new Error("IMPORT_FORBIDDEN");
+
+      await tx.projectFile.deleteMany({ where: { projectId: project.id } });
+      await tx.projectFile.createMany({
+        data: files.map((file) => ({ projectId: project.id, ...file })),
+      });
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[builder] no se pudo importar el proyecto", {
+      projectId: parsed.data.projectId,
+      userId: session.user.id,
+      message,
+    });
+    return {
+      ok: false,
+      error: message === "IMPORT_FORBIDDEN"
+        ? "No tenes acceso de escritura a este proyecto."
+        : "No pudimos importar el proyecto.",
+    };
+  }
+
+  revalidatePath("/dashboard/builder");
+  revalidatePath("/dev/projects");
+  return { ok: true, error: null };
+}
+
 /** Guarda una edicion manual del usuario en el editor de codigo. */
 export async function saveProjectFile(input: {
   projectId: string;
@@ -119,11 +187,17 @@ export async function saveProjectFile(input: {
     // Sin este chequeo cualquiera escribe archivos en proyectos ajenos
     // mandando otro projectId.
     const project = await prisma.project.findFirst({
-      where: { id: projectId, ownerId: session.user.id },
+      where: {
+        id: projectId,
+        OR: [
+          { ownerId: session.user.id },
+          { tickets: { some: { assignedDevId: session.user.id, status: "IN_PROGRESS" } } },
+        ],
+      },
       select: { id: true },
     });
 
-    if (!project) return { ok: false, error: "Ese proyecto no es tuyo." };
+    if (!project) return { ok: false, error: "No tenes acceso de escritura a este proyecto." };
 
     await prisma.projectFile.upsert({
       where: { projectId_path: { projectId, path } },
@@ -207,8 +281,20 @@ export async function saveProjectThumbnail(input: {
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
   try {
+    const allowed = await prisma.project.findFirst({
+      where: {
+        id: parsed.data.projectId,
+        OR: [
+          { ownerId: session.user.id },
+          { tickets: { some: { assignedDevId: session.user.id, status: "IN_PROGRESS" } } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (!allowed) return { ok: false, error: "No tenes acceso de escritura a este proyecto." };
+
     const updated = await prisma.project.updateMany({
-      where: { id: parsed.data.projectId, ownerId: session.user.id },
+      where: { id: parsed.data.projectId },
       data: { thumbnail: parsed.data.dataUrl },
     });
 

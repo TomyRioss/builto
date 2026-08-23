@@ -54,6 +54,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
             name: user.name,
             image: user.image,
             role: user.role,
+            isActive: user.isActive,
           };
         } catch (error) {
           console.error("[auth] fallo el login por credenciales", {
@@ -71,12 +72,12 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
       if (user) {
         token.id = user.id as string;
         token.role = (user as { role?: Role }).role ?? "USER";
-        return token;
+        token.isActive = (user as { isActive?: boolean }).isActive ?? true;
       }
 
-      // OAuth crea el User via adapter sin pasar por authorize, y el rol puede
-      // cambiar desde el panel: releer en el update explicito de sesion.
-      if (trigger === "update" || !token.role) {
+      // Releer siempre mantiene cambios de rol y desactivaciones efectivos aun
+      // cuando el usuario ya tenia un JWT abierto.
+      if (trigger === "update" || token.id || token.sub) {
         try {
           const db = await prisma.user.findUnique({
             where: { id: token.id ?? (token.sub as string) },
@@ -103,6 +104,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
       if (session.user) {
         session.user.id = token.id ?? (token.sub as string);
         session.user.role = token.role ?? "USER";
+        session.user.isActive = token.isActive !== false;
       }
       return session;
     },

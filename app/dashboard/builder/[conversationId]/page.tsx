@@ -13,6 +13,9 @@ export default async function BuilderConversationPage(
   if (!session?.user?.id) redirect("/login");
 
   const { conversationId } = await props.params;
+  const searchParams = await props.searchParams;
+  const requestedReturn = typeof searchParams.returnTo === "string" ? searchParams.returnTo : null;
+  const returnTo = requestedReturn?.startsWith("/dashboard/tickets/") ? requestedReturn : null;
   const conversation = await getConversation(conversationId, session.user.id);
 
   // Tambien cubre "existe pero es de otro": getConversation filtra por dueño.
@@ -34,6 +37,7 @@ export default async function BuilderConversationPage(
             : undefined,
         }))}
       initialFiles={withStarterFiles(filesToRecord(conversation.project.files))}
+      returnTo={returnTo}
     />
   );
 }

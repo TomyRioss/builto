@@ -65,7 +65,7 @@ export async function uploadTicketAttachments({
     }
 
     const ext = file.type === "image/png" ? "png" : file.type === "image/jpeg" ? "jpg" : "webp";
-    const storageKey = `${ticketId}/${Date.now()}-${i}.${ext}`;
+    const storageKey = `${ticketId}/${uploaderId}/${Date.now()}-${i}.${ext}`;
 
     const { error } = await storage()
       .storage.from(BUCKET)

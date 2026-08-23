@@ -118,10 +118,19 @@ export async function POST(
   try {
     deltas = await streamCompletion(history, request.signal);
   } catch (error) {
-    console.error("[builder] DeepSeek rechazo el pedido", { conversationId, error });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[builder] DeepSeek rechazo el pedido", {
+      conversationId,
+      message,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
-      { error: "La IA no respondio. Proba de nuevo en un momento." },
-      { status: 502 },
+      {
+        error: message.includes("Falta DEEPSEEK_API_KEY")
+          ? "Falta configurar DEEPSEEK_API_KEY en .env.local."
+          : "La IA no respondio. Proba de nuevo en un momento.",
+      },
+      { status: message.includes("Falta DEEPSEEK_API_KEY") ? 503 : 502 },
     );
   }
 

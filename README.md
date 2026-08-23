@@ -16,6 +16,18 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### Builder con IA
+
+El builder necesita estas variables en `.env.local`:
+
+```bash
+DEEPSEEK_API_KEY=tu_api_key
+DEEPSEEK_MODEL=deepseek-chat
+```
+
+`DEEPSEEK_MODEL` es opcional y usa `deepseek-chat` por defecto. Reinicia el
+servidor de desarrollo despues de cambiar variables de entorno.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

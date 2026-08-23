@@ -8,7 +8,7 @@ import {
   SandpackPreview,
   useSandpack,
 } from "@codesandbox/sandpack-react";
-import { LuCode, LuDownload, LuEye, LuLoader } from "react-icons/lu";
+import { LuCode, LuDownload, LuEye, LuLoader, LuPlus, LuUpload, LuX } from "react-icons/lu";
 import { toast } from "sonner";
 import type { SandpackError } from "@codesandbox/sandpack-client";
 
@@ -79,6 +79,9 @@ type Props = {
   files: Record<string, string>;
   writingPath: string | null;
   isStreaming: boolean;
+  initialTab?: "preview" | "code";
+  allowImport?: boolean;
+  readOnly?: boolean;
 };
 
 /**
@@ -93,8 +96,11 @@ export default function PreviewPanel({
   files,
   writingPath,
   isStreaming,
+  initialTab = "preview",
+  allowImport = false,
+  readOnly = false,
 }: Props) {
-  const [tab, setTab] = useState<"preview" | "code">("preview");
+  const [tab, setTab] = useState<"preview" | "code">(initialTab);
 
   useThumbnailCapture(projectId);
 
@@ -185,13 +191,15 @@ export default function PreviewPanel({
               className="flex min-h-0 flex-col border-r border-[#cfc4c5]"
               style={{ display: tab === "code" ? "flex" : "none" }}
             >
+              {!readOnly && <NewFileControl />}
               <SandpackFileExplorer autoHiddenFiles style={{ flex: 1, minHeight: 0 }} />
-              <ExportCodeButton />
+              {!readOnly && <CodeTransferControls projectId={projectId} allowImport={allowImport} />}
             </div>
             <SandpackCodeEditor
               showTabs
               showLineNumbers
               closableTabs
+              readOnly={readOnly}
               style={{ height: "100%", display: tab === "code" ? "flex" : "none" }}
             />
         </SandpackLayout>
@@ -201,7 +209,174 @@ export default function PreviewPanel({
   );
 }
 
+function NewFileControl() {
+  const { sandpack } = useSandpack();
+  const [open, setOpen] = useState(false);
+  const [path, setPath] = useState("/src/");
+
+  function create(event: React.FormEvent) {
+    event.preventDefault();
+    const normalized = normalizePath(path);
+    if (!normalized || normalized === "/" || HIDDEN_FILES.includes(normalized)) {
+      toast.error("Elegi una ruta valida dentro del proyecto.");
+      return;
+    }
+    if (sandpack.files[normalized]) {
+      toast.error("Ese archivo ya existe.");
+      return;
+    }
+    sandpack.addFile(normalized, "");
+    sandpack.openFile(normalized);
+    setOpen(false);
+    setPath("/src/");
+  }
+
+  return (
+    <div className="border-b border-[#cfc4c5] p-2">
+      {open ? (
+        <form onSubmit={create} className="flex items-center gap-1">
+          <input
+            autoFocus
+            value={path}
+            onChange={(event) => setPath(event.target.value)}
+            aria-label="Ruta del archivo nuevo"
+            className="h-8 min-w-0 flex-1 rounded border border-[#cfc4c5] bg-white px-2 text-xs outline-none focus:border-[#4648d4]"
+            placeholder="/src/components/Nuevo.tsx"
+          />
+          <button
+            type="submit"
+            className="grid size-8 shrink-0 place-items-center rounded bg-black text-white"
+            title="Crear archivo"
+          >
+            <LuPlus className="size-4" />
+            <span className="sr-only">Crear archivo</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="grid size-8 shrink-0 place-items-center rounded text-[#666768] hover:bg-[#eceeef]"
+            title="Cancelar"
+          >
+            <LuX className="size-4" />
+            <span className="sr-only">Cancelar</span>
+          </button>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex min-h-8 w-full items-center justify-center gap-2 rounded text-xs font-medium text-[#4c4546] hover:bg-[#eceeef]"
+        >
+          <LuPlus className="size-4" />
+          Nuevo archivo
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Zippea los archivos visibles del sandbox y dispara la descarga. */
+function CodeTransferControls({ projectId, allowImport }: { projectId: string; allowImport: boolean }) {
+  return (
+    <div className="grid grid-cols-1 border-t border-[#cfc4c5] bg-white">
+      {allowImport && <ImportCodeButton projectId={projectId} />}
+      <ExportCodeButton />
+    </div>
+  );
+}
+
+const BINARY_EXTENSIONS = new Set([
+  "png", "jpg", "jpeg", "gif", "webp", "ico", "pdf", "zip", "woff", "woff2", "ttf", "eot", "mp3", "mp4", "webm",
+]);
+
+function ImportCodeButton({ projectId }: { projectId: string }) {
+  const { sandpack } = useSandpack();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+
+  async function handleFile(file: File) {
+    setImporting(true);
+    try {
+      const { default: JSZip } = await import("jszip");
+      const zip = await JSZip.loadAsync(file);
+      const entries = Object.values(zip.files).filter((entry) => {
+        const path = entry.name.replaceAll("\\", "/");
+        const extension = path.split(".").pop()?.toLowerCase() ?? "";
+        return !entry.dir
+          && !path.split("/").some((part) => part === "node_modules" || part === ".git" || part === ".next")
+          && !BINARY_EXTENSIONS.has(extension);
+      });
+      if (entries.length === 0) throw new Error("EMPTY_ZIP");
+
+      const firstSegments = entries.map((entry) => entry.name.replaceAll("\\", "/").split("/")[0]);
+      const commonRoot = firstSegments.every((segment) => segment === firstSegments[0])
+        && entries.every((entry) => entry.name.replaceAll("\\", "/").includes("/"))
+        ? `${firstSegments[0]}/`
+        : "";
+
+      const files = await Promise.all(entries.map(async (entry) => ({
+        path: normalizePath(entry.name.replaceAll("\\", "/").slice(commonRoot.length)),
+        content: await entry.async("string"),
+      })));
+      const result = await importProjectFiles({ projectId, files });
+      if (!result.ok) {
+        toast.error(result.error ?? "No pudimos guardar los archivos importados.");
+        return;
+      }
+
+      const importedPaths = new Set(files.map((item) => item.path));
+      for (const item of files) {
+        if (sandpack.files[item.path]) sandpack.updateFile(item.path, item.content);
+        else sandpack.addFile(item.path, item.content);
+      }
+      const nextActive = importedPaths.has(ENTRY_FILE) ? ENTRY_FILE : files[0].path;
+      sandpack.openFile(nextActive);
+      for (const path of Object.keys(sandpack.files)) {
+        if (!HIDDEN_FILES.includes(path) && !importedPaths.has(path)) sandpack.deleteFile(path);
+      }
+      toast.success(`${files.length} archivos importados correctamente.`);
+      void sandpack.runSandpack().catch(() => {
+        toast.warning("Los archivos se guardaron, pero el preview tiene errores de compilacion.");
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      console.warn("[builder] ZIP rechazado antes de guardarse", { projectId, message });
+      toast.error(
+        message === "EMPTY_ZIP"
+          ? "El ZIP no contiene codigo importable."
+          : message || "No pudimos leer el ZIP. Verifica que no este dañado.",
+      );
+    } finally {
+      setImporting(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".zip,application/zip"
+        className="sr-only"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void handleFile(file);
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={importing}
+        className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-[#191c1d] hover:bg-[#edeeef] disabled:opacity-60"
+      >
+        {importing ? <LuLoader className="size-4 animate-spin" aria-hidden /> : <LuUpload className="size-4" aria-hidden />}
+        {importing ? "Importando..." : "Importar ZIP"}
+      </button>
+    </>
+  );
+}
+
 function ExportCodeButton() {
   const { sandpack } = useSandpack();
   const [exporting, setExporting] = useState(false);
@@ -238,7 +413,7 @@ function ExportCodeButton() {
       type="button"
       onClick={handleExport}
       disabled={exporting}
-      className="flex items-center gap-2 border-t border-[#cfc4c5] bg-[#ffffff] px-4 py-3 text-sm font-medium text-[#191c1d] hover:bg-[#edeeef] disabled:opacity-60"
+      className="flex items-center gap-2 border-t border-[#cfc4c5] px-4 py-3 text-sm font-medium text-[#191c1d] hover:bg-[#edeeef] disabled:opacity-60"
     >
       {exporting ? (
         <LuLoader className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />

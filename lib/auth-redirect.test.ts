@@ -8,8 +8,8 @@ test("un DEV entra a su dashboard por defecto", () => {
 
 test("otros roles conservan el dashboard general", () => {
   assert.equal(getPostLoginPath("USER"), "/dashboard");
-  assert.equal(getPostLoginPath("ADMIN"), "/dashboard");
-  assert.equal(getPostLoginPath("OWNER"), "/dashboard");
+  assert.equal(getPostLoginPath("ADMIN"), "/admin/dashboard");
+  assert.equal(getPostLoginPath("OWNER"), "/admin/dashboard");
 });
 
 test("un callback interno explicito tiene prioridad", () => {

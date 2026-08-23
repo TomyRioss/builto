@@ -74,7 +74,7 @@ export function NewTicketDialog({ projects }: Props) {
     if (state.ok) {
       const timeoutId = window.setTimeout(() => {
         setOpen(false);
-        toast.success("Ticket abierto.");
+        toast.success("Ticket abierto. Un dev lo revisa y carga tiempo y precio.");
       }, 0);
 
       return () => window.clearTimeout(timeoutId);

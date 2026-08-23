@@ -9,7 +9,7 @@ import { registerUser } from "../../(auth)/actions";
 import { AuthField, FormError } from "./AuthField";
 import { GoogleButton } from "./GoogleButton";
 
-export function RegisterForm() {
+export function RegisterForm({ inviteToken, invitedEmail, invitedRole }: { inviteToken?: string; invitedEmail?: string; invitedRole?: "DEV" | "ADMIN" }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -20,7 +20,7 @@ export function RegisterForm() {
     setPending(true);
 
     const data = new FormData(event.currentTarget);
-    const email = String(data.get("email") ?? "");
+    const email = invitedEmail ?? String(data.get("email") ?? "");
     const password = String(data.get("password") ?? "");
 
     try {
@@ -28,6 +28,7 @@ export function RegisterForm() {
         name: String(data.get("name") ?? ""),
         email,
         password,
+        inviteToken,
       });
 
       if (result.error) {
@@ -50,7 +51,7 @@ export function RegisterForm() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(result.role === "DEV" ? "/dev/dashboard" : result.role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
     } catch (error) {
       console.error("[auth] fallo el registro", error);
       setError("No pudimos conectar con el servidor. Probá de nuevo.");
@@ -80,6 +81,8 @@ export function RegisterForm() {
         label="Email"
         autoComplete="email"
         placeholder="vos@estudio.com"
+        defaultValue={invitedEmail}
+        readOnly={Boolean(invitedEmail)}
         required
       />
 
@@ -102,7 +105,7 @@ export function RegisterForm() {
         {pending ? "Creando cuenta…" : "Crear cuenta"}
       </Button>
 
-      <div className="flex items-center gap-4">
+      {!inviteToken && <><div className="flex items-center gap-4">
         <hr className="flex-1 border-0 border-t border-[#cfc4c5]" />
         <span className="text-xs font-semibold uppercase leading-4 tracking-[0.05em] text-[#7e7576]">
           o
@@ -110,7 +113,9 @@ export function RegisterForm() {
         <hr className="flex-1 border-0 border-t border-[#cfc4c5]" />
       </div>
 
-      <GoogleButton onError={setError} />
+      <GoogleButton onError={setError} /></>}
+
+      {invitedRole && <p className="text-center text-xs text-[#666768]">Esta invitacion crea una cuenta con rol {invitedRole}.</p>}
     </form>
   );
 }

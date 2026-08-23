@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "components/landing/features-section.tsx"
+        ],
+        "createdAt": "2026-08-23T05:27:38.934Z",
+        "reason": "user confirmed: pidió copiar gradient del h1 principal"
+      }
+    ]
+  }
+}

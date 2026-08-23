@@ -24,6 +24,7 @@ export default async function DevTicketDetailPage(
   const project = await getDevProjectDetail(projectId);
   const ticket = project?.tickets.find((item) => item.id === ticketId);
   if (!project || !ticket) notFound();
+  const feedback = ticket.conversations[0]?.messages ?? [];
 
   return (
     <div className="mx-auto w-full max-w-[960px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
@@ -52,6 +53,8 @@ export default async function DevTicketDetailPage(
           <span className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" className="size-4" />Creado {dateFormatter.format(ticket.createdAt)}</span>
           <span className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" className="size-4" />Actualizado {dateFormatter.format(ticket.updatedAt)}</span>
         </div>
+
+        {feedback.length > 0 && <div className="mt-6 border-t border-[#eceeef] pt-5"><h3 className="text-sm font-semibold text-black">Feedback de revision</h3><ul className="mt-3 space-y-3">{feedback.map((message) => <li key={message.id} className="rounded-md bg-[#f8f9fa] p-4"><div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#777879]"><span className="font-medium text-[#4648d4]">{message.senderKind === "ADMIN" ? "Equipo interno" : message.sender?.name ?? message.sender?.email ?? "Cliente"}</span><span>{dateFormatter.format(message.createdAt)}</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#4c4546]">{message.body}</p></li>)}</ul></div>}
 
         <TicketWorkflowActions
           projectId={project.id}

@@ -1,5 +1,15 @@
 const ENDPOINT = "https://api.deepseek.com/chat/completions";
-const MODEL = "deepseek-v4-flash";
+const DEFAULT_MODEL = "deepseek-chat";
+
+function configuredModel() {
+  return process.env.DEEPSEEK_MODEL?.trim() || DEFAULT_MODEL;
+}
+
+function errorDetail(error: unknown) {
+  return error instanceof Error
+    ? { name: error.name, message: error.message, stack: error.stack }
+    : { message: String(error) };
+}
 
 export type ContentPart =
   | { type: "text"; text: string }
@@ -78,7 +88,7 @@ async function post(
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ model: MODEL, ...body }),
+    body: JSON.stringify({ model: configuredModel(), ...body }),
   });
 
   if (!response.ok) {
@@ -155,7 +165,7 @@ async function* readDeltas(body: ReadableStream<Uint8Array>): AsyncGenerator<str
           const delta = JSON.parse(payload)?.choices?.[0]?.delta?.content;
           if (typeof delta === "string" && delta) yield delta;
         } catch (error) {
-          console.error("[deepseek] evento SSE ilegible", { payload, error });
+          console.error("[deepseek] evento SSE ilegible", { payload, ...errorDetail(error) });
         }
       }
     }
