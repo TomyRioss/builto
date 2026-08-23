@@ -606,6 +606,35 @@ function FileSync({
     };
   }, [isStreaming, rerun]);
 
+  // Cambio de proyecto: el host mantiene un unico SandpackProvider vivo entre
+  // conversaciones (ver BuilderPreviewHost), asi que no hay remount que se
+  // encargue de esto solo. Se borran los archivos que no pertenecen al nuevo
+  // proyecto y se pisan/agregan el resto, en vez de reinstalar el sandbox.
+  const prevProjectIdRef = useRef(projectId);
+
+  useEffect(() => {
+    if (prevProjectIdRef.current === projectId) return;
+    prevProjectIdRef.current = projectId;
+
+    const current = sandpackRef.current;
+    const nextPaths = new Set(Object.keys(externalFiles));
+    const stale = Object.keys(current.files).filter((path) => !nextPaths.has(path));
+
+    stale.forEach((path) => current.deleteFile(path));
+    current.updateFile(externalFiles);
+    current.setActiveFile(ENTRY_FILE);
+    visibleFiles(externalFiles).forEach((path) => current.openFile(path));
+
+    current.runSandpack().catch((error) => {
+      console.error("[builder] no se pudo recompilar el sandbox al cambiar de proyecto", {
+        projectId,
+        error,
+      });
+      toast.error("El preview quedo desactualizado. Recargalo con el boton de refresh.");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
   useEffect(() => {
     const current = sandpackRef.current;
 

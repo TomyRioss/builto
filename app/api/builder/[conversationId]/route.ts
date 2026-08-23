@@ -13,6 +13,10 @@ import { withStarterFiles } from "@/lib/builder/template";
 /** Cuantos mensajes de historial se mandan al modelo por turno. */
 const HISTORY_LIMIT = 20;
 
+// Sin esto Vercel corta la funcion a los 10-15s por defecto y un turno largo
+// de DeepSeek (varios archivos completos) queda a mitad de stream.
+export const maxDuration = 300;
+
 const bodySchema = z.object({
   content: z
     .string()

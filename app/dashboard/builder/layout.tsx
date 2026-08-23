@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { listConversations } from "@/lib/builder/queries";
 import { BuilderSidebar } from "../../components/BuilderSidebar";
+import { BuilderPreviewHost } from "../../components/builder/BuilderPreviewHost";
 
 export default async function BuilderLayout(props: LayoutProps<"/dashboard/builder">) {
   const session = await auth();
@@ -21,7 +22,9 @@ export default async function BuilderLayout(props: LayoutProps<"/dashboard/build
           updatedAt: conversation.updatedAt.toISOString(),
         }))}
       />
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col">{props.children}</main>
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <BuilderPreviewHost>{props.children}</BuilderPreviewHost>
+      </main>
     </>
   );
 }

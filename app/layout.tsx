@@ -44,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           }}
         />
       </head>
-      <body className="h-full flex flex-col overflow-hidden">{children}</body>
+      <body className="h-full flex flex-col overflow-y-auto">{children}</body>
     </html>
   );
 }
