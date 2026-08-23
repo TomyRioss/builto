@@ -30,7 +30,7 @@ export function UserMenu({ email, name, image }: UserMenuProps) {
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger className="group flex items-center gap-3 rounded-none px-2 py-1.5 text-left transition-colors hover:bg-[#f1f2f3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#191c1d]">
         <Avatar className="size-8 rounded-none">
           {image ? <AvatarImage className="rounded-none" src={image} alt={name ?? email} /> : null}
@@ -47,7 +47,7 @@ export function UserMenu({ email, name, image }: UserMenuProps) {
         />
         <span className="sr-only">Abrir menu de usuario</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="w-56 min-w-56 rounded-none">
+      <DropdownMenuContent align="end" sideOffset={8} className="min-w-0 rounded-none">
         <DropdownMenuItem
           render={<Link href="/dashboard/account" />}
           className="rounded-none px-3 py-2"

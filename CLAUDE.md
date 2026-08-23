@@ -35,6 +35,7 @@ Todo error se catchea. Sin excepción. Cada catch debe producir:
 - Prohibido CSS puro / archivos `.css` propios / estilos inline salvo que Tailwind no lo permita (y avisarlo).
 - **Nunca** tocar `global.css`.
 - Tokens de color, tipografía, radios y spacing: los de `DESIGN.md` (paleta Monolith Ultra). No inventar colores.
+- Color secundario: morado `#4648d4` (fondo claro `#eef2ff`, borde `#c0c1ff`). Uso restringido: estado activo, acciones IA/"magic", chips de review.
 
 ## 3.1 Tipografía y espacio
 
