@@ -282,13 +282,19 @@ export default {
 
   "/src/main.tsx": `import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 
 import "./index.css";
 import App from "./App";
 
+// La IA usa <Link>/useNavigate de react-router-dom en el codigo que genera;
+// sin este provider cualquier <Link> tira "useHref() may be used only in the
+// context of a <Router>" y React desmonta todo -> preview en blanco sin error.
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </StrictMode>,
 );
 `,

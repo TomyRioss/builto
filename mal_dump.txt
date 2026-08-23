@@ -1,0 +1,419 @@
+◇ injected env (8) from .env.local // tip: ⌘ suppress logs { quiet: true }
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, TrendingUp, Target, Users, BarChart3, Search, Share2, Mail, Phone, MapPin, Menu, X, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+
+export default function App() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const services = [
+    {
+      icon: <Search className="size-6" />,
+      title: "SEO & SEM",
+      description: "Posicioná tu marca en los primeros resultados y captá tráfico calificado que se convierta en ventas.",
+    },
+    {
+      icon: <Share2 className="size-6" />,
+      title: "Social Media",
+      description: "Estrategias de contenido que construyen comunidad y hacen crecer tu presencia en redes.",
+    },
+    {
+      icon: <BarChart3 className="size-6" />,
+      title: "Analytics & Data",
+      description: "Decisiones basadas en datos reales. Medimos cada campaña y optimizamos en tiempo real.",
+    },
+    {
+      icon: <Target className="size-6" />,
+      title: "Branding",
+      description: "Construimos identidades de marca memorables que conectan con tu audiencia.",
+    },
+  ];
+
+  const stats = [
+    { value: "250+", label: "Proyectos exitosos" },
+    { value: "98%", label: "Clientes satisfechos" },
+    { value: "12", label: "Años de experiencia" },
+    { value: "40+", label: "Especialistas" },
+  ];
+
+  const testimonials = [
+    {
+      name: "María González",
+      role: "CEO, TechStart",
+      content: "Triplicaron nuestro tráfico orgánico en 6 meses. El equipo es increíblemente profesional y siempre están un paso adelante.",
+    },
+    {
+      name: "Juan Pérez",
+      role: "Director, RetailMax",
+      content: "La mejor inversión que hicimos en marketing digital. El ROI de las campañas superó todas nuestras expectativas.",
+    },
+    {
+      name: "Ana Rodríguez",
+      role: "Fundadora, FoodLovers",
+      content: "Entendieron nuestra marca desde el primer día. Las redes sociales nunca habían funcionado tan bien para nosotros.",
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-white font-sans text-neutral-950">
+      {/* Navbar */}
+      <header className="fixed top-0 z-50 w-full border-b border-neutral-200/80 bg-white/80 backdrop-blur-md">
+        <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="flex items-center gap-2">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-violet-600">
+              <TrendingUp className="size-5 text-white" />
+            </span>
+            <span className="text-lg font-bold tracking-tight">NexoDigital</span>
+          </Link>
+
+          {/* Desktop menu */}
+          <div className="hidden items-center gap-8 md:flex">
+            <a href="#services" className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-950">Servicios</a>
+            <a href="#about" className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-950">Nosotros</a>
+            <a href="#testimonials" className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-950">Casos</a>
+            <a href="#contact" className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-950">Contacto</a>
+            <Button className="bg-violet-600 hover:bg-violet-700">
+              Empezar proyecto
+              <ArrowRight className="size-4" />
+            </Button>
+          </div>
+
+          {/* Mobile menu button */}
+          <button
+            className="rounded-md p-2 text-neutral-600 hover:bg-neutral-100 md:hidden"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Abrir menú"
+          >
+            {isMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
+          </button>
+        </nav>
+
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="border-t border-neutral-200 bg-white px-4 py-4 md:hidden">
+            <div className="flex flex-col gap-4">
+              <a href="#services" className="text-sm font-medium text-neutral-600 hover:text-neutral-950" onClick={() => setIsMenuOpen(false)}>Servicios</a>
+              <a href="#about" className="text-sm font-medium text-neutral-600 hover:text-neutral-950" onClick={() => setIsMenuOpen(false)}>Nosotros</a>
+              <a href="#testimonials" className="text-sm font-medium text-neutral-600 hover:text-neutral-950" onClick={() => setIsMenuOpen(false)}>Casos</a>
+              <a href="#contact" className="text-sm font-medium text-neutral-600 hover:text-neutral-950" onClick={() => setIsMenuOpen(false)}>Contacto</a>
+              <Button className="bg-violet-600 hover:bg-violet-700">
+                Empezar proyecto
+                <ArrowRight className="size-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* Hero Section */}
+      <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
+        <div className="pointer-events-none absolute -right-32 -top-32 size-[32rem] rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.15)_0%,_rgba(255,255,255,0)_68%)]" />
+        <div className="pointer-events-none absolute -left-32 top-64 size-[28rem] rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.1)_0%,_rgba(255,255,255,0)_68%)]" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <div>
+              <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-violet-50 px-4 py-1.5 text-sm font-medium text-violet-700">
+                <span className="size-2 rounded-full bg-violet-600" />
+                Agencia de marketing digital
+              </p>
+              <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+                Hacemos crecer tu marca{" "}
+                <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                  en el mundo digital
+                </span>
+              </h1>
+              <p className="mt-6 max-w-xl text-lg leading-8 text-neutral-600">
+                Estrategias de marketing que generan resultados medibles. Transformamos tu presencia online en una máquina de captar clientes.
+              </p>
+              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                <Button size="lg" className="bg-violet-600 hover:bg-violet-700">
+                  Empezar ahora
+                  <ArrowRight className="size-4" />
+                </Button>
+                <Button size="lg" variant="outline">
+                  Ver servicios
+                </Button>
+              </div>
+              <div className="mt-8 flex items-center gap-4">
+                <div className="flex -space-x-2">
+                  {["https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face", "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face"].map((src, i) => (
+                    <img key={i} src={src} alt="Cliente" className="size-10 rounded-full border-2 border-white object-cover" />
+                  ))}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <span key={i} className="text-sm text-amber-400">★</span>
+                    ))}
+                  </div>
+                  <p className="text-sm text-neutral-600">+250 empresas confían en nosotros</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative hidden lg:block">
+              <div className="relative rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 p-1">
+                <div className="rounded-xl bg-white p-8">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-500">Crecimiento mensual</p>
+                      <p className="text-3xl font-bold text-neutral-950">+248%</p>
+                    </div>
+                    <span className="flex size-12 items-center justify-center rounded-full bg-violet-100">
+                      <TrendingUp className="size-6 text-violet-600" />
+                    </span>
+                  </div>
+                  <div className="mt-6 flex h-40 items-end gap-2">
+                    {[40, 65, 45, 80, 60, 95, 75, 100].map((height, i) => (
+                      <div key={i} className="flex-1 rounded-t-lg bg-gradient-to-t from-violet-600 to-fuchsia-500" style={{ height: `${height}%` }} />
+                    ))}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-neutral-100 pt-4">
+                    <div>
+                      <p className="text-sm text-neutral-500">Visitas orgánicas</p>
+                      <p className="text-xl font-bold text-neutral-950">45.2K</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-neutral-500">Conversiones</p>
+                      <p className="text-xl font-bold text-neutral-950">3,847</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="border-y border-neutral-200 bg-neutral-50 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
+            {stats.map((stat, i) => (
+              <div key={i} className="text-center">
+                <p className="text-4xl font-bold text-violet-600">{stat.value}</p>
+                <p className="mt-2 text-sm text-neutral-600">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section id="services" className="py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-violet-600">Nuestros servicios</p>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Soluciones completas para tu negocio
+            </h2>
+            <p className="mt-4 text-lg text-neutral-600">
+              Desde estrategia hasta ejecución. Todo lo que necesitás para dominar el marketing digital.
+            </p>
+          </div>
+
+          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {services.map((service, i) => (
+              <div key={i} className="group rounded-2xl border border-neutral-200 bg-white p-6 transition-all hover:border-violet-200 hover:shadow-lg">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-violet-100 text-violet-600 transition-colors group-hover:bg-violet-600 group-hover:text-white">
+                  {service.icon}
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">{service.title}</h3>
+                <p className="text-sm leading-6 text-neutral-600">{service.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="bg-neutral-950 py-20 text-white sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <div>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-violet-400">Sobre nosotros</p>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Un equipo que piensa en resultados
+              </h2>
+              <p className="mt-6 text-lg leading-8 text-neutral-400">
+                Somos un equipo de especialistas apasionados por el marketing digital. Combinamos creatividad, tecnología y datos para crear estrategias que realmente funcionan.
+              </p>
+              <div className="mt-8 space-y-4">
+                {["Estrategia personalizada para cada cliente", "Equipo multidisciplinario certificado", "Reportes transparentes y en tiempo real", "Optimización continua de campañas"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <CheckCircle2 className="size-5 shrink-0 text-violet-400" />
+                    <span className="text-neutral-300">{item}</span>
+                  </div>
+                ))}
+              </div>
+              <Button size="lg" className="mt-8 bg-violet-600 hover:bg-violet-700">
+                Conocé al equipo
+                <ArrowRight className="size-4" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=400&fit=crop" alt="Equipo trabajando" className="h-64 w-full rounded-2xl object-cover" />
+              <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop" alt="Reunión de estrategia" className="mt-8 h-64 w-full rounded-2xl object-cover" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-violet-600">Casos de éxito</p>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Lo que dicen nuestros clientes
+            </h2>
+          </div>
+
+          <div className="mt-16 grid gap-8 lg:grid-cols-3">
+            {testimonials.map((testimonial, i) => (
+              <div key={i} className="flex flex-col rounded-2xl border border-neutral-200 bg-white p-6">
+                <div className="mb-4 flex items-center gap-1">
+                  {[...Array(5)].map((_, j) => (
+                    <span key={j} className="text-sm text-amber-400">★</span>
+                  ))}
+                </div>
+                <p className="flex-1 text-neutral-600">"{testimonial.content}"</p>
+                <div className="mt-6 flex items-center gap-3 border-t border-neutral-100 pt-4">
+                  <img src={`https://images.unsplash.com/photo-${i === 0 ? "1494790108377-be9c29b29330" : i === 1 ? "1507003211169-0a1dd7228f2d" : "1438761681033-6461ffad8d80"}?w=100&h=100&fit=crop&crop=face`} alt={testimonial.name} className="size-12 rounded-full object-cover" />
+                  <div>
+                    <p className="font-semibold">{testimonial.name}</p>
+                    <p className="text-sm text-neutral-500">{testimonial.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="border-t border-neutral-200 bg-neutral-50 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-12 lg:grid-cols-2">
+            <div>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-violet-600">Contacto</p>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Empecemos a trabajar juntos
+              </h2>
+              <p className="mt-4 text-lg text-neutral-600">
+                Contanos sobre tu proyecto y te armamos una propuesta a medida.
+              </p>
+
+              <div className="mt-8 space-y-4">
+                <div className="flex items-center gap-4">
+                  <span className="flex size-12 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                    <Mail className="size-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold">Email</p>
+                    <p className="text-neutral-600">hola@nexodigital.com</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="flex size-12 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                    <Phone className="size-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold">Teléfono</p>
+                    <p className="text-neutral-600">+54 11 1234-5678</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="flex size-12 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                    <MapPin className="size-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold">Oficina</p>
+                    <p className="text-neutral-600">Av. Corrientes 1234, Buenos Aires</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8">
+              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <div>
+                  <label htmlFor="name" className="mb-1 block text-sm font-medium text-neutral-700">Nombre</label>
+                  <input
+                    type="text"
+                    id="name"
+                    className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                    placeholder="Tu nombre"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email" className="mb-1 block text-sm font-medium text-neutral-700">Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                    placeholder="tu@email.com"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="company" className="mb-1 block text-sm font-medium text-neutral-700">Empresa</label>
+                  <input
+                    type="text"
+                    id="company"
+                    className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                    placeholder="Nombre de tu empresa"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="message" className="mb-1 block text-sm font-medium text-neutral-700">Mensaje</label>
+                  <textarea
+                    id="message"
+                    rows={4}
+                    className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                    placeholder="Contanos sobre tu proyecto..."
+                  />
+                </div>
+                <Button type="submit" size="lg" className="w-full bg-violet-600 hover:bg-violet-700">
+                  Enviar mensaje
+                  <ArrowRight className="size-4" />
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-neutral-950 py-12 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+            <div className="flex items-center gap-2">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-violet-600">
+                <TrendingUp className="size-5 text-white" />
+              </span>
+              <span className="text-lg font-bold">NexoDigital</span>
+            </div>
+            <p className="text-sm text-neutral-400">
+              © 2024 NexoDigital. Todos los derechos reservados.
+            </p>
+            <div className="flex items-center gap-4">
+              <a href="#" className="text-neutral-400 transition-colors hover:text-white" aria-label="Instagram">
+                <Users className="size-5" />
+              </a>
+              <a href="#" className="text-neutral-400 transition-colors hover:text-white" aria-label="LinkedIn">
+                <Share2 className="size-5" />
+              </a>
+              <a href="#" className="text-neutral-400 transition-colors hover:text-white" aria-label="Twitter">
+                <BarChart3 className="size-5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
