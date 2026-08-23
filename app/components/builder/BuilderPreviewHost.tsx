@@ -29,6 +29,7 @@ const PreviewPanel = dynamic(() => import("./PreviewPanel"), {
 
 type ProjectPreview = {
   projectId: string;
+  projectName: string;
   files: Record<string, string>;
   writingPath: string | null;
   isStreaming: boolean;
@@ -69,6 +70,7 @@ export function BuilderPreviewHost({ children }: { children: ReactNode }) {
         ? createPortal(
             <PreviewPanel
               projectId={project.projectId}
+              projectName={project.projectName}
               files={project.files}
               writingPath={project.writingPath}
               isStreaming={project.isStreaming}
@@ -89,7 +91,7 @@ export function useBuilderPreview(data: ProjectPreview) {
   useEffect(() => {
     setProject(data);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setProject, data.projectId, data.files, data.writingPath, data.isStreaming]);
+  }, [setProject, data.projectId, data.projectName, data.files, data.writingPath, data.isStreaming]);
 
   return ctx.setPortalTarget;
 }

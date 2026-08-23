@@ -1,108 +1,92 @@
-import { LuSearch, LuArrowUp } from "react-icons/lu";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { LuMessageSquareOff } from "react-icons/lu";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { TicketChat } from "@/components/tickets/ticket-chat";
+import { getTicketChat } from "@/lib/tickets/chat";
+import { cn } from "@/lib/utils";
 
-// ponytail: bandeja mock, sin backend
-const threads = [
-  { id: "1", name: "Martina Alvarez", preview: "Te paso el brief actualizado.", time: "09:41", unread: 2, active: true },
-  { id: "2", name: "Equipo Producto", preview: "Quedo aprobado el wireframe.", time: "Ayer", unread: 0, active: false },
-  { id: "3", name: "Julian Perez", preview: "Vemos el pricing manana?", time: "Lun", unread: 0, active: false },
-  { id: "4", name: "Soporte Builto", preview: "Tu plan se renovo correctamente.", time: "12 ago", unread: 0, active: false },
-];
+export const dynamic = "force-dynamic";
 
-const conversation = [
-  { id: "1", mine: false, text: "Hola, te paso el brief actualizado del proyecto." },
-  { id: "2", mine: true, text: "Perfecto, lo reviso y te confirmo hoy." },
-  { id: "3", mine: false, text: "Genial. Sumamos una seccion de casos de exito." },
-];
+const relativeFmt = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "short" });
+const timeFmt = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit" });
 
-export default function MessagesPage() {
+function when(date: Date) {
+  const sameDay = date.toDateString() === new Date().toDateString();
+  return sameDay ? timeFmt.format(date) : relativeFmt.format(date);
+}
+
+export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ ticket?: string }> }) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  const { ticket: selectedTicketId } = await searchParams;
+
+  const conversations = (
+    await prisma.conversation.findMany({
+      where: { kind: "TICKET", ticket: { createdById: session.user.id } },
+      select: {
+        id: true,
+        ticketId: true,
+        ticket: { select: { id: true, title: true } },
+        messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true, senderKind: true, createdAt: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    })
+  ).filter((conversation) => conversation.messages.length > 0);
+
+  const selected = selectedTicketId ? conversations.find((conversation) => conversation.ticketId === selectedTicketId) : undefined;
+  const chat = selected ? await getTicketChat(selected.ticketId!) : null;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-      <div className="flex w-full shrink-0 flex-col border-b border-[#cfc4c5] bg-[#ffffff] md:w-80 md:border-b-0 md:border-r">
+      <div className={cn("flex w-full shrink-0 flex-col border-b border-[#cfc4c5] bg-[#ffffff] md:w-80 md:border-b-0 md:border-r", selected && "hidden md:flex")}>
         <div className="border-b border-[#cfc4c5] px-6 py-5">
-          <div className="flex items-center gap-3 rounded-md border border-[#cfc4c5] px-3 py-2 focus-within:border-[#4648d4]">
-            <LuSearch className="size-4 shrink-0 text-[#7e7576]" aria-hidden />
-            <input
-              type="search"
-              placeholder="Buscar"
-              className="min-w-0 flex-1 bg-transparent text-sm leading-5 outline-none placeholder:text-[#7e7576]"
-            />
-          </div>
+          <h1 className="text-base font-medium leading-6">Mensajes</h1>
+          <p className="mt-1 text-sm leading-5 text-[#7e7576]">Conversaciones sobre tus tickets</p>
         </div>
-
-        <ul className="divide-y divide-[#cfc4c5] border-b border-[#cfc4c5]">
-          {threads.map((t) => (
-            <li key={t.id}>
-              <button
-                type="button"
-                className={`flex w-full items-start gap-3 px-6 py-5 text-left ${
-                  t.active ? "bg-[#edeeef]" : "hover:bg-[#f3f4f5]"
-                }`}
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e1e3e4] text-xs font-semibold uppercase tracking-[0.05em] text-[#4c4546]">
-                  {t.name.slice(0, 2)}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-medium leading-5">{t.name}</span>
-                    <span className="shrink-0 text-xs text-[#7e7576]">{t.time}</span>
+        <ul className="min-h-0 flex-1 divide-y divide-[#cfc4c5] overflow-y-auto">
+          {conversations.length === 0 && <li className="px-6 py-8 text-sm leading-5 text-[#7e7576]">Todavia no tenes mensajes. Se crean al preguntar detalles en un ticket.</li>}
+          {conversations.map((conversation) => {
+            const last = conversation.messages[0];
+            const active = conversation.ticketId === selectedTicketId;
+            const initials = conversation.ticket!.title.slice(0, 2).toUpperCase();
+            return (
+              <li key={conversation.id}>
+                <Link href={`/dashboard/messages?ticket=${conversation.ticketId}`} className={cn("flex w-full items-start gap-3 px-6 py-5 text-left", active ? "bg-[#edeeef]" : "hover:bg-[#f3f4f5]")}>
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e1e3e4] text-xs font-semibold uppercase tracking-[0.05em] text-[#4c4546]">{initials}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-medium leading-5">{conversation.ticket!.title}</span>
+                      <span className="shrink-0 text-xs text-[#7e7576]">{when(last.createdAt)}</span>
+                    </span>
+                    <span className="mt-1 block truncate text-sm leading-5 text-[#4c4546]">{last.senderKind === "USER" ? "Vos: " : ""}{last.body}</span>
                   </span>
-                  <span className="mt-1 flex items-center justify-between gap-2">
-                    <span className="truncate text-sm leading-5 text-[#4c4546]">{t.preview}</span>
-                    {t.unread > 0 && (
-                      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#4648d4] text-[11px] font-semibold text-[#ffffff]">
-                        {t.unread}
-                      </span>
-                    )}
-                  </span>
-                </span>
-              </button>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-3 border-b border-[#cfc4c5] bg-[#ffffff] px-4 py-4 md:px-8">
-          <span className="flex size-8 items-center justify-center rounded-full bg-[#e1e3e4] text-xs font-semibold uppercase tracking-[0.05em] text-[#4c4546]">
-            MA
-          </span>
-          <h1 className="truncate text-base font-medium leading-6">Martina Alvarez</h1>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 py-8 md:px-8">
-          <div className="mx-auto flex w-full max-w-[720px] flex-col gap-6">
-            {conversation.map((m) => (
-              <div key={m.id} className={m.mine ? "flex justify-end" : "flex justify-start"}>
-                <p
-                  className={`max-w-[85%] rounded-lg px-4 py-3 text-base leading-6 ${
-                    m.mine
-                      ? "bg-[#000000] text-[#ffffff]"
-                      : "border border-[#cfc4c5] bg-[#ffffff] text-[#191c1d]"
-                  }`}
-                >
-                  {m.text}
-                </p>
-              </div>
-            ))}
+      <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col", !selected && "hidden md:flex")}>
+        {selected && chat ? (
+          <>
+            <div className="flex items-center gap-3 border-b border-[#cfc4c5] bg-[#ffffff] px-4 py-4 md:px-8">
+              <Link href="/dashboard/messages" className="text-sm font-medium text-[#4648d4] md:hidden">Atras</Link>
+              <h1 className="truncate text-base font-medium leading-6">{selected.ticket!.title}</h1>
+            </div>
+            <div className="min-h-0 flex-1">
+              <TicketChat ticketId={selected.ticketId!} messages={chat.messages} viewerIsStaff={false} />
+            </div>
+          </>
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+            <LuMessageSquareOff className="size-6 text-[#7e7576]" aria-hidden />
+            <p className="text-sm font-medium leading-5">Elegi una conversacion</p>
+            <p className="text-sm leading-5 text-[#7e7576]">Tus mensajes con Builto aparecen a la izquierda.</p>
           </div>
-        </div>
-
-        <div className="border-t border-[#cfc4c5] bg-[#ffffff] px-4 py-4 md:px-8">
-          <div className="mx-auto flex w-full max-w-[720px] items-center gap-3 rounded-lg border border-[#cfc4c5] px-4 py-3 focus-within:border-[#4648d4]">
-            <input
-              type="text"
-              placeholder="Escribi un mensaje"
-              className="min-w-0 flex-1 bg-transparent text-base leading-6 outline-none placeholder:text-[#7e7576]"
-            />
-            <button
-              type="button"
-              aria-label="Enviar"
-              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1b]"
-            >
-              <LuArrowUp className="size-4" aria-hidden />
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

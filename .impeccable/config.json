@@ -1,0 +1,29 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "components/landing/features-section.tsx"
+        ],
+        "reason": "user confirmed: pidió copiar gradient del h1 principal",
+        "createdAt": "2026-08-23T05:27:38.934Z"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "reason": "DESIGN.md del proyecto exige Inter como fuente unica obligatoria, no es default sin pensar",
+        "createdAt": "2026-08-23T10:20:34.783Z"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "11px",
+        "reason": "matches existing timestamp label pattern used across ticket pages (11px used repo-wide for meta text)",
+        "createdAt": "2026-08-23T10:27:36.184Z"
+      }
+    ]
+  }
+}

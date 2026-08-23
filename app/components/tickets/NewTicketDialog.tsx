@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  LuPlus,
+  LuTicket,
   LuCode,
   LuHistory,
   LuPalette,
@@ -56,10 +56,18 @@ const MAX_REFERENCE_BYTES = 1_500_000;
 
 type Props = {
   projects: { id: string; name: string; thumbnail: string | null }[];
+  /**
+   * Apertura controlada desde afuera (ej: los botones del chat). Cuando esta
+   * presente el dialogo no renderiza trigger propio y obedece al padre.
+   */
+  externalOpen?: boolean;
+  onExternalClose?: () => void;
 };
 
-export function NewTicketDialog({ projects }: Props) {
-  const [open, setOpen] = useState(false);
+export function NewTicketDialog({ projects, externalOpen, onExternalClose }: Props) {
+  const controlled = externalOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlled ? externalOpen : internalOpen;
   const [step, setStep] = useState(0);
   const [projectId, setProjectId] = useState(
     projects.length === 1 ? projects[0].id : "",
@@ -73,7 +81,7 @@ export function NewTicketDialog({ projects }: Props) {
   useEffect(() => {
     if (state.ok) {
       const timeoutId = window.setTimeout(() => {
-        setOpen(false);
+        onOpenChange(false);
         toast.success("Ticket abierto. Un dev lo revisa y carga tiempo y precio.");
       }, 0);
 
@@ -83,11 +91,12 @@ export function NewTicketDialog({ projects }: Props) {
     if (state.error) {
       toast.error(state.error);
     }
+    // Solo reacciona al resultado de la accion; onOpenChange cambia en cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   // Al cerrar, el wizard vuelve a foja cero: no dejamos medio ticket cargado.
   function onOpenChange(next: boolean) {
-    setOpen(next);
     if (!next) {
       setStep(0);
       setTitle("");
@@ -95,6 +104,12 @@ export function NewTicketDialog({ projects }: Props) {
       setReferences([]);
       setError(null);
       setProjectId(projects.length === 1 ? projects[0].id : "");
+    }
+
+    if (controlled) {
+      if (!next) onExternalClose?.();
+    } else {
+      setInternalOpen(next);
     }
   }
 
@@ -129,7 +144,7 @@ export function NewTicketDialog({ projects }: Props) {
     data.set("title", title.trim());
     data.set("description", scope.trim());
     references.forEach((ref) => data.append("attachments", ref.file));
-    formAction(data);
+    startTransition(() => formAction(data));
   }
 
   const selectedProject = projects.find((p) => p.id === projectId);
@@ -137,17 +152,18 @@ export function NewTicketDialog({ projects }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger
-        render={
-          <Button
-            size="lg"
-            className="rounded-md bg-[#000000] px-5 text-xs font-semibold uppercase tracking-[0.05em] text-[#ffffff] hover:bg-[#1b1b1b]"
-          />
-        }
-      >
-        <LuPlus className="size-4" aria-hidden />
-        Abrir ticket
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger
+          render={
+            <Button
+              className="rounded-md bg-[#4648d4] px-3.5 text-xs font-semibold uppercase tracking-[0.05em] text-[#ffffff] shadow-[0_1px_2px_rgba(70,72,212,0.25)] hover:bg-[#3a3cb8]"
+            />
+          }
+        >
+          <LuTicket className="size-3.5" aria-hidden />
+          Abrir ticket
+        </DialogTrigger>
+      )}
 
       <DialogContent
         className={`max-h-[88vh] gap-0 overflow-hidden p-0 ${

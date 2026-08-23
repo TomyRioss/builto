@@ -1,7 +1,7 @@
 import { getAdminAuditLog } from "@/lib/admin/queries";
 
 export const dynamic = "force-dynamic";
-const date = new Intl.DateTimeFormat("es-AR", { dateStyle: "medium", timeStyle: "short" });
+const date = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", dateStyle: "medium", timeStyle: "short" });
 const actions: Record<string, string> = {
   "ticket.quoted": "Cotizacion emitida",
   "ticket.clarification_requested": "Aclaracion solicitada",

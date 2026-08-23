@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     ".agents/**",
     ".claude/**",
     ".windsurf/**",
+    // Bundles compilados de las previews; no son codigo fuente del proyecto.
+    "public/templates/**",
   ]),
 ]);
 

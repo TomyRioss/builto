@@ -44,6 +44,19 @@ export async function getAdminTicket(ticketId: string) {
   });
 }
 
+export async function getAdminConversations() {
+  return prisma.conversation.findMany({
+    where: { kind: "TICKET", ticketId: { not: null } },
+    select: {
+      id: true,
+      ticketId: true,
+      ticket: { select: { id: true, title: true, status: true, createdBy: { select: { name: true, email: true } } } },
+      messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true, senderKind: true, createdAt: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
 export async function getAssignableDevelopers() {
   return prisma.user.findMany({
     where: { role: "DEV", isActive: true },

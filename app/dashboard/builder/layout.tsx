@@ -22,7 +22,7 @@ export default async function BuilderLayout(props: LayoutProps<"/dashboard/build
           updatedAt: conversation.updatedAt.toISOString(),
         }))}
       />
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <main className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
         <BuilderPreviewHost>{props.children}</BuilderPreviewHost>
       </main>
     </>

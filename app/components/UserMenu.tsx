@@ -22,7 +22,7 @@ type UserMenuProps = {
 export function UserMenu({ email, name, image }: UserMenuProps) {
   async function handleSignOut() {
     try {
-      await signOut({ redirectTo: "/login" });
+      await signOut({ redirectTo: "/" });
     } catch (error) {
       console.error("[user-menu] fallo el cierre de sesion", { email, error });
       window.alert("No pudimos cerrar la sesion. Intenta de nuevo.");

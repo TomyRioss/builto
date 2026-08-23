@@ -8,6 +8,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizePath } from "@/lib/builder/protocol";
+import { getTemplateSeed } from "@/lib/builder/template-seeds";
 
 export type ActionState = { ok: boolean; error: string | null };
 
@@ -39,6 +40,62 @@ export async function createConversation(): Promise<ActionState> {
   } catch (error) {
     console.error("[builder] no se pudo crear la conversacion", {
       userId: session.user.id,
+      error,
+    });
+    return { ok: false, error: "No pudimos crear el proyecto. Proba de nuevo." };
+  }
+
+  revalidatePath("/dashboard/builder");
+  redirect(`/dashboard/builder/${conversationId}`);
+}
+
+/**
+ * Crea proyecto + conversacion sembrados con el codigo de una plantilla.
+ *
+ * Los archivos de la plantilla se guardan como ProjectFile y pisan al starter
+ * via withStarterFiles(): el chat arranca con la plantilla renderizada en el
+ * preview, lista para editar por IA o desde el editor.
+ */
+export async function createConversationFromTemplate(
+  slug: string,
+): Promise<ActionState> {
+  const session = await auth();
+
+  if (!session?.user?.id) return { ok: false, error: "Inicia sesion de nuevo." };
+
+  const template = getTemplateSeed(slug);
+
+  if (!template) return { ok: false, error: "Esa plantilla no existe." };
+
+  let conversationId: string;
+
+  try {
+    const conversation = await prisma.conversation.create({
+      data: {
+        kind: "AI",
+        project: {
+          create: {
+            ownerId: session.user.id,
+            name: template.name,
+            slug: `sitio-${randomUUID().slice(0, 8)}`,
+            files: {
+              create: Object.entries(template.files).map(([path, content]) => ({
+                path,
+                content,
+              })),
+            },
+          },
+        },
+        participants: { create: { userId: session.user.id } },
+      },
+      select: { id: true },
+    });
+
+    conversationId = conversation.id;
+  } catch (error) {
+    console.error("[builder] no se pudo crear la conversacion desde plantilla", {
+      userId: session.user.id,
+      slug,
       error,
     });
     return { ok: false, error: "No pudimos crear el proyecto. Proba de nuevo." };

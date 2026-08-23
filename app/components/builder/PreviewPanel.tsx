@@ -11,8 +11,10 @@ import {
 } from "@codesandbox/sandpack-react";
 import { LuCode, LuDownload, LuEye, LuLoader, LuPlus, LuUpload, LuX } from "react-icons/lu";
 import { toast } from "sonner";
+import type { SandpackError } from "@codesandbox/sandpack-client";
 
 import { importProjectFiles, saveProjectFile, saveProjectThumbnail } from "@/app/dashboard/builder/actions";
+import { NewTicketDialog } from "@/app/components/tickets/NewTicketDialog";
 import { normalizePath } from "@/lib/builder/protocol";
 import {
   ENTRY_FILE,
@@ -42,13 +44,48 @@ const LOADING_MESSAGES = [
   "Alineando los divs",
   "Silenciando warnings de TypeScript",
   "Centrando un div (dificil, ya sabemos)",
+  "Buscando por que funciona en mi maquina",
+  "Desenredando el spaghetti de CSS",
+  "Preguntandole a Stack Overflow",
+  "Esperando que nadie toque producción",
+  "Haciendo las paces con las dependencias",
+  "Persiguiendo un pixel rebelde",
+  "Convenciendo al responsive de cooperar",
+  "Traduciendo diseño a componentes",
+  "Revisando que el botón haga algo",
+  "Quitando el console.log de prueba",
+  "Contando divs innecesarios",
+  "Acomodando el caos con flexbox",
+  "Dándole café al servidor",
+  "Buscando el cierre de la etiqueta",
+  "Haciendo que todo entre en mobile",
+  "Negociando con los márgenes",
+  "Poniendo los píxeles en fila",
+  "Validando que no sea otro z-index",
+  "Casi listo, no muevas nada",
 ];
+
+/** Easter egg: chance minima de reemplazar el mensaje normal en cada tick. */
+const EASTER_EGG_MESSAGE = "Farmeando aura";
+const EASTER_EGG_CHANCE = 0.02;
 
 const MESSAGE_INTERVAL_MS = 2200;
 const DOT_INTERVAL_MS = 450;
 
+/** Caras de un cubo 3D: cada una es la cara de un cubo de 72px desplazada/rotada desde el centro. */
+const CUBE_HALF = "36px";
+const CUBE_FACES = [
+  { transform: `rotateY(0deg) translateZ(${CUBE_HALF})` }, // front
+  { transform: `rotateY(180deg) translateZ(${CUBE_HALF})` }, // back
+  { transform: `rotateY(90deg) translateZ(${CUBE_HALF})` }, // right
+  { transform: `rotateY(-90deg) translateZ(${CUBE_HALF})` }, // left
+  { transform: `rotateX(90deg) translateZ(${CUBE_HALF})` }, // top
+  { transform: `rotateX(-90deg) translateZ(${CUBE_HALF})` }, // bottom
+];
+
 type Props = {
   projectId: string;
+  projectName: string;
   files: Record<string, string>;
   writingPath: string | null;
   isStreaming: boolean;
@@ -65,6 +102,7 @@ const RERUN_FALLBACK_MS = 2000;
 
 export default function PreviewPanel({
   projectId,
+  projectName,
   files,
   writingPath,
   isStreaming,
@@ -95,6 +133,16 @@ export default function PreviewPanel({
 
   const previewScopeRef = useRef<HTMLDivElement>(null);
   const bundlerLoading = useBundlerLoading(previewScopeRef);
+  const runtimeError = useRuntimeError(isStreaming);
+  // `.sp-loading` vive adentro del iframe de Nodebox: en una recompilacion
+  // grande (npm install de una dependencia nueva, muchos archivos juntos) no
+  // siempre se ve desde afuera y el preview queda en blanco sin aviso. Esto
+  // se prende a mano alrededor del runSandpack() real, sin depender del DOM.
+  const [recompiling, setRecompiling] = useState(false);
+  // Cubrimos la transicion desde el inicio del turno: Sandpack puede dejar el
+  // iframe en blanco antes de que su estado de carga o la recompilacion sean
+  // observables desde afuera.
+  const showLoadingOverlay = bundlerLoading || recompiling || isStreaming;
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#f8f9fa]">
@@ -106,6 +154,10 @@ export default function PreviewPanel({
           Codigo
         </TabButton>
 
+        <NewTicketDialog
+          projects={[{ id: projectId, name: projectName, thumbnail: null }]}
+        />
+
         {writingPath && (
           <span className="ml-auto flex items-center gap-2 text-xs font-medium text-[#4648d4]">
             <LuLoader className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden />
@@ -115,39 +167,34 @@ export default function PreviewPanel({
       </header>
 
       {/*
-        Tailwind no llega acá: el cubo y el overlay de carga son markup
-        interno de Sandpack (clases sp-*), no algo que nosotros escribimos.
-        Se agranda, centra y le tapamos el resto del contenido con un
-        override scopeado a este panel, no a global.css.
+        Sandpack solo muestra su propio cubo cuando sandpack.status === "running";
+        durante "initial" (la mayor parte del npm install) su overlay queda oculto.
+        Por eso dibujamos nuestro propio cubo en BundlerLoadingText en vez de
+        depender del markup interno (clases sp-*) de Sandpack.
       */}
       <style jsx global>{`
-        .sandpack-preview-scope .sp-loading {
-          background: rgba(248, 249, 250, 0.82) !important;
-          backdrop-filter: blur(10px);
-        }
-        .sandpack-preview-scope .sp-loading > *:not(.sp-cube-wrapper) {
-          display: none !important;
-        }
-        .sandpack-preview-scope .sp-cube-wrapper {
-          right: auto !important;
-          bottom: auto !important;
-          top: var(--cube-center-top) !important;
-          left: 50% !important;
-          width: auto !important;
-          height: auto !important;
-          transform: translate(-50%, -50%) !important;
-        }
-        .sandpack-preview-scope .sp-cube {
-          transform: scale(0.95, 0.95) !important;
+        @keyframes preview-cube-spin {
+          from {
+            transform: rotateX(-25deg) rotateY(0deg);
+          }
+          to {
+            transform: rotateX(-25deg) rotateY(360deg);
+          }
         }
       `}</style>
 
       <div
         ref={previewScopeRef}
         className="sandpack-preview-scope relative min-h-0 flex-1"
-        style={{ "--cube-center-top": "42%" } as React.CSSProperties}
       >
-        {bundlerLoading && <BundlerLoadingText />}
+        {isStreaming && (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-[80] h-0.5 origin-left bg-[#6063ee] shadow-[0_0_10px_rgba(96,99,238,0.7)] motion-safe:animate-[preview-progress_1.4s_ease-in-out_infinite]"
+            role="progressbar"
+            aria-label="Generando preview"
+          />
+        )}
+        {showLoadingOverlay && <BundlerLoadingText />}
 
         <SandpackProvider
           template={SANDBOX_TEMPLATE}
@@ -156,7 +203,14 @@ export default function PreviewPanel({
           options={mountOptions}
           style={{ height: "100%" }}
         >
-          {!readOnly && <FileSync projectId={projectId} externalFiles={files} isStreaming={isStreaming} />}
+          <PreviewErrorOverlay bundlerLoading={showLoadingOverlay} runtimeError={runtimeError} />
+
+          <FileSync
+            projectId={projectId}
+            externalFiles={files}
+            isStreaming={isStreaming}
+            onRecompilingChange={setRecompiling}
+          />
 
           <SandpackLayout
             style={{
@@ -195,6 +249,50 @@ export default function PreviewPanel({
       </div>
     </section>
   );
+}
+
+/** Necesita estar dentro de SandpackProvider para leer sandpack.error/runSandpack. */
+function PreviewErrorOverlay({
+  bundlerLoading,
+  runtimeError,
+}: {
+  bundlerLoading: boolean;
+  runtimeError: string | null;
+}) {
+  const { sandpack } = useSandpack();
+  if (bundlerLoading) return null;
+  if (sandpack.error) return <PreviewError error={sandpack.error} onRetry={sandpack.runSandpack} />;
+  if (runtimeError) return <PreviewError error={{ message: runtimeError }} onRetry={sandpack.runSandpack} />;
+  return null;
+}
+
+/**
+ * Escucha las excepciones de runtime que reporta `RUNTIME_ERROR_SCRIPT` (ver
+ * template.ts) desde el iframe del sandbox. `sandpack.error` no las cubre:
+ * son errores de React/JS en el browser, no del bundler, y sin esto el
+ * usuario se queda mirando un iframe en blanco sin ningun aviso.
+ */
+function useRuntimeError(isStreaming: boolean) {
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isStreaming) return;
+    const timer = setTimeout(() => setError(null), 0);
+    return () => clearTimeout(timer);
+  }, [isStreaming]);
+
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      const data = event.data;
+      if (typeof data !== "object" || data === null || (data as { type?: unknown }).type !== "builto:runtime-error") return;
+      const message = (data as { message?: unknown }).message;
+      if (typeof message === "string") setError(message);
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  return error;
 }
 
 function NewFileControl() {
@@ -416,7 +514,8 @@ function ExportCodeButton() {
 /**
  * Sandpack no expone si esta bundleando/instalando como prop publica; el
  * overlay `.sp-loading` se monta y desmonta solo mientras dura. Observamos
- * el DOM en vez de pelear con su estado interno.
+ * el DOM en vez de pelear con su estado interno (mas confiable que
+ * sandpack.status/listen(), que puede quedarse pegado sin emitir "done").
  */
 function useBundlerLoading(scopeRef: React.RefObject<HTMLDivElement | null>) {
   const [loading, setLoading] = useState(false);
@@ -441,10 +540,12 @@ function BundlerLoadingText() {
   const [messageIndex, setMessageIndex] = useState(() =>
     Math.floor(Math.random() * LOADING_MESSAGES.length),
   );
+  const [easterEgg, setEasterEgg] = useState(false);
   const [dotCount, setDotCount] = useState(1);
 
   useEffect(() => {
     const timer = setInterval(() => {
+      setEasterEgg(Math.random() < EASTER_EGG_CHANCE);
       setMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
     }, MESSAGE_INTERVAL_MS);
     return () => clearInterval(timer);
@@ -459,17 +560,64 @@ function BundlerLoadingText() {
 
   return (
     <div
-      className="pointer-events-none absolute z-[70]"
-      style={{
-        top: "calc(var(--cube-center-top) + 130px)",
-        left: "50%",
-        transform: "translateX(calc(-50% + 56px))",
-      }}
+      className="pointer-events-none absolute inset-0 z-[70] flex flex-col items-center justify-center gap-4"
+      style={{ background: "rgba(248, 249, 250, 0.82)", backdropFilter: "blur(10px)" }}
     >
-      <p className="whitespace-nowrap text-center text-xl font-semibold tracking-[-0.01em] text-[#191c1d]">
-        {LOADING_MESSAGES[messageIndex]}
+      <div className="size-[72px]" style={{ perspective: "360px" }} aria-hidden>
+        <div
+          className="relative size-full"
+          style={{
+            transformStyle: "preserve-3d",
+            animation: "preview-cube-spin 2.4s linear infinite",
+          }}
+        >
+          {CUBE_FACES.map(({ transform }, i) => (
+            <div
+              key={i}
+              className="absolute inset-0 border border-[#4648d4] bg-[#eef2ff]"
+              style={{ transform }}
+            />
+          ))}
+        </div>
+      </div>
+      <p className="ml-4 whitespace-nowrap text-center text-xl font-semibold tracking-[-0.01em] text-[#191c1d]">
+        {easterEgg ? EASTER_EGG_MESSAGE : LOADING_MESSAGES[messageIndex]}
         <span className="inline-block w-6 text-left">{".".repeat(dotCount)}</span>
       </p>
+    </div>
+  );
+}
+
+function PreviewError({ error, onRetry }: { error: SandpackError; onRetry: () => Promise<void> }) {
+  const [retrying, setRetrying] = useState(false);
+
+  async function retry() {
+    setRetrying(true);
+    try {
+      await onRetry();
+    } finally {
+      setRetrying(false);
+    }
+  }
+
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-[75] flex items-center justify-center bg-[#f8f9fa]/95 p-6">
+      <div className="w-full max-w-lg rounded-xl border border-[#e8caca] bg-white p-6 shadow-[0_18px_45px_-28px_rgba(127,29,29,0.45)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#b42318]">No se pudo renderizar</p>
+        <h2 className="mt-2 text-lg font-semibold text-[#191c1d]">Hay un error en el código generado</h2>
+        <p className="mt-3 break-words font-mono text-xs leading-5 text-[#6b4b4b]">
+          {error.path ? `${error.path}${error.line ? `:${error.line}` : ""}` : "Preview"}
+          {error.message ? `: ${error.message}` : ""}
+        </p>
+        <button
+          type="button"
+          onClick={retry}
+          disabled={retrying}
+          className="mt-5 rounded-md bg-[#4648d4] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3537b8] disabled:cursor-progress disabled:opacity-60"
+        >
+          {retrying ? "Recompilando..." : "Reintentar preview"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -519,10 +667,12 @@ function FileSync({
   projectId,
   externalFiles,
   isStreaming,
+  onRecompilingChange,
 }: {
   projectId: string;
   externalFiles: Record<string, string>;
   isStreaming: boolean;
+  onRecompilingChange: (loading: boolean) => void;
 }) {
   const { sandpack } = useSandpack();
   const { activeFile } = sandpack;
@@ -558,6 +708,7 @@ function FileSync({
   // el prop `files` del provider reinicia el sandbox entero (npm install de
   // nuevo, preview en blanco); updateFile solo re-bundlea lo que cambio.
   const sandpackRef = useRef(sandpack);
+
   useEffect(() => {
     sandpackRef.current = sandpack;
   }, [sandpack]);
@@ -584,11 +735,27 @@ function FileSync({
       rerunTimerRef.current = null;
     }
 
-    sandpackRef.current.runSandpack().catch((error) => {
-      console.error("[builder] no se pudo recompilar el sandbox", { projectId, error });
-      toast.error("El preview quedo desactualizado. Recargalo con el boton de refresh.");
-    });
-  }, [projectId]);
+    const startedAt = performance.now();
+    onRecompilingChange(true);
+
+    sandpackRef.current
+      .runSandpack()
+      .then(() => {
+        console.info("[builder] preview recompilado", {
+          projectId,
+          durationMs: Math.round(performance.now() - startedAt),
+        });
+      })
+      .catch((error) => {
+        console.error("[builder] no se pudo recompilar el sandbox", {
+          projectId,
+          durationMs: Math.round(performance.now() - startedAt),
+          error,
+        });
+        toast.error("El preview quedo desactualizado. Recargalo con el boton de refresh.");
+      })
+      .finally(() => onRecompilingChange(false));
+  }, [projectId, onRecompilingChange]);
 
   useEffect(() => {
     if (isStreaming) {
@@ -597,14 +764,18 @@ function FileSync({
     }
     if (!rerunPendingRef.current) return;
 
-    // Lo normal es que router.refresh() traiga los archivos y dispare el efecto
-    // de abajo antes de este plazo; el timer es la red por si no cambia nada.
+    // El aviso arranca ya (el turno termino, el preview todavia muestra la
+    // version vieja), no recien cuando arranca runSandpack() 2s despues.
+    onRecompilingChange(true);
+
+    // Espera un tick para que updateFile termine de actualizar el estado interno
+    // de Sandpack antes de iniciar el bundler.
     rerunTimerRef.current = setTimeout(rerun, RERUN_FALLBACK_MS);
 
     return () => {
       if (rerunTimerRef.current) clearTimeout(rerunTimerRef.current);
     };
-  }, [isStreaming, rerun]);
+  }, [isStreaming, rerun, onRecompilingChange]);
 
   // Cambio de proyecto: el host mantiene un unico SandpackProvider vivo entre
   // conversaciones (ver BuilderPreviewHost), asi que no hay remount que se
@@ -641,21 +812,47 @@ function FileSync({
     const changed = Object.entries(externalFiles).filter(
       ([path, content]) => current.files[path]?.code !== content,
     );
+    const stale = Object.keys(current.files).filter(
+      (path) => !HIDDEN_FILES.includes(path) && !(path in externalFiles),
+    );
+
+    // Primero sacamos los archivos del proyecto anterior. updateFile define el
+    // estado final de recompilacion, por eso debe ser la ultima operacion.
+    stale.forEach((path) => current.deleteFile(path, false));
 
     if (changed.length > 0) {
       const nuevos = changed
         .map(([path]) => path)
         .filter((path) => !(path in current.files) && !HIDDEN_FILES.includes(path));
 
-      current.updateFile(Object.fromEntries(changed));
+      // Mientras la IA escribe no compilamos: App.tsx puede importar archivos que
+      // todavía no llegaron. La recompilación única ocurre al cerrar el turno.
+      current.updateFile(Object.fromEntries(changed), undefined, !isStreaming);
       // updateFile no toca visibleFiles: sin esto los archivos nuevos que crea
       // la IA no aparecen en el explorador (autoHiddenFiles los filtra).
       nuevos.forEach((path) => current.openFile(path));
     }
 
     // Recien aca el sandbox tiene todo: si quedo una recompilacion pendiente
-    // del turno que termino, este es el momento.
-    if (!isStreaming) rerun();
+    // del turno que termino, este es el momento. Al cambiar de proyecto con
+    // archivos completos no hacemos runSandpack: updateFile ya re-bundlea en
+    // caliente y evita reiniciar Nodebox.
+    if (!isStreaming && changed.length > 0) {
+      // El cambio de proyecto ya se recompila con updateFile; no hace falta
+      // reiniciar el sandbox por la bandera de un turno anterior.
+      rerunPendingRef.current = false;
+      if (rerunTimerRef.current) {
+        clearTimeout(rerunTimerRef.current);
+        rerunTimerRef.current = null;
+      }
+    } else if (
+      !isStreaming &&
+      rerunPendingRef.current &&
+      changed.length === 0 &&
+      stale.length === 0
+    ) {
+      rerun();
+    }
   }, [externalFiles, isStreaming, rerun]);
 
   useEffect(() => {

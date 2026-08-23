@@ -38,6 +38,7 @@ export const HIDDEN_FILES = [
   "/src/main.tsx",
   "/src/index.css",
   "/vite.config.js",
+  "/vite.config.cjs",
   "/tsconfig.json",
   "/tailwind.config.js",
   "/postcss.config.js",
@@ -60,6 +61,7 @@ const PACKAGE_JSON = {
     clsx: "^2.1.1",
     "lucide-react": "^0.469.0",
     "react-icons": "^5.4.0",
+    "react-router-dom": "^6.28.0",
     "tailwind-merge": "^2.6.0",
   },
   devDependencies: {
@@ -79,31 +81,19 @@ const PACKAGE_JSON = {
   },
 };
 
-export const STARTER_FILES: Record<string, string> = {
-  "/package.json": `${JSON.stringify(PACKAGE_JSON, null, 2)}\n`,
-
-  "/index.html": `<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-    />
-    <title>Sitio</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-
-    <!-- Captura del preview para las tarjetas del dashboard.
-
-         El preview corre en un iframe cross-origin (Nodebox), asi que el
-         parent no puede leer su DOM ni capturarlo. La captura se toma aca
-         adentro y sale por postMessage; el parent la persiste. Tampoco sirve
-         que el parent la pida: el iframe de la app esta anidado dentro del de
-         Nodebox y no es alcanzable por DOM. Por eso se auto-dispara. -->
+/**
+ * Captura del preview para las tarjetas del dashboard.
+ *
+ * El preview corre en un iframe cross-origin (Nodebox), asi que el parent no
+ * puede leer su DOM ni capturarlo. La captura se toma adentro y sale por
+ * postMessage; el parent la persiste. Tampoco sirve que el parent la pida: el
+ * iframe de la app esta anidado dentro del de Nodebox y no es alcanzable por
+ * DOM. Por eso se auto-dispara.
+ *
+ * Lo usan el starter y los seeds de plantillas: sin esto las tarjetas de
+ * proyectos creados desde plantilla quedarian sin miniatura.
+ */
+export const PREVIEW_CAPTURE_SCRIPT = `
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script>
       (function () {
@@ -172,21 +162,65 @@ export const STARTER_FILES: Record<string, string> = {
           });
         });
       })();
-    </script>
+    </script>`;
+
+/**
+ * `sandpack.error` solo cubre errores del bundler: una excepcion en runtime
+ * (ej. un componente que tira al renderizar) deja el iframe en blanco sin que
+ * Sandpack lo detecte, y sin overlay el usuario ve una pantalla vacia para
+ * siempre, incluso tras refrescar (el codigo guardado sigue roto). Esto
+ * reporta esas excepciones al parent para que PreviewPanel las muestre.
+ */
+export const RUNTIME_ERROR_SCRIPT = `
+    <script>
+      (function () {
+        function report(message, extra) {
+          window.top.postMessage(
+            { type: "builto:runtime-error", message: message, extra: extra || "" },
+            "*"
+          );
+        }
+        window.addEventListener("error", function (event) {
+          report(event.message, event.filename ? event.filename + ":" + event.lineno : "");
+        });
+        window.addEventListener("unhandledrejection", function (event) {
+          var reason = event.reason;
+          report(reason && reason.message ? reason.message : String(reason));
+        });
+      })();
+    </script>`;
+
+export const STARTER_FILES: Record<string, string> = {
+  "/package.json": `${JSON.stringify(PACKAGE_JSON, null, 2)}\n`,
+
+  "/index.html": `<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    />
+    <title>Sitio</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+${PREVIEW_CAPTURE_SCRIPT}
+${RUNTIME_ERROR_SCRIPT}
   </body>
 </html>
 `,
 
-  // Configs en ESM. Vite escribe un vite.config.js.timestamp-*.mjs temporal
-  // para leerlas y el fs de Nodebox no lo encuentra, asi que el preview loguea
-  // un ENOENT — cosmetico, el server arranca igual y solo se ve en el overlay
-  // de dev de Builto. Pasarlas a CommonJS lo saca, pero rompe el pipeline de
-  // PostCSS y el sitio queda sin Tailwind (probado). Se queda en ESM.
-  "/vite.config.js": `import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+  // CommonJS evita que Vite genere un vite.config.js.timestamp-*.mjs temporal:
+  // Nodebox no puede leer ese archivo intermedio de su filesystem.
+  "/vite.config.cjs": `const { defineConfig } = require("vite");
+ const reactPlugin = require("@vitejs/plugin-react");
+ const react = reactPlugin.default || reactPlugin;
 
-export default defineConfig({
-  plugins: [react()],
+ module.exports = defineConfig({
+   plugins: [react()],
   // El codigo fuente de shadcn/ui importa siempre "@/lib/utils". Sin este
   // alias, cualquier componente pegado tal cual de shadcn no resuelve y el
   // preview queda en blanco. La raiz del sandbox es "/", asi que "/src" ya es
@@ -309,19 +343,41 @@ export function Button({
 export { buttonVariants };
 `,
 
-  [ENTRY_FILE]: `import { Button } from "./components/ui/button";
-
-export default function App() {
+  [ENTRY_FILE]: `export default function App() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-6 px-4 md:px-10">
-      <h1 className="text-4xl font-semibold tracking-tight text-neutral-900">
-        Tu sitio empieza aca
-      </h1>
-      <p className="max-w-[65ch] leading-6 text-neutral-600">
-        Contale al chat que queres construir y esta pagina se va a ir armando en
-        vivo mientras escribe.
-      </p>
-      <Button className="w-fit">Boton de ejemplo</Button>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-6 py-16 font-sans text-neutral-950">
+      <div className="pointer-events-none absolute -right-24 -top-32 size-[28rem] rounded-full bg-[radial-gradient(circle,_rgba(196,181,253,0.28)_0%,_rgba(255,255,255,0)_68%)]" />
+      <div className="pointer-events-none absolute -bottom-48 -left-24 size-[30rem] rounded-full bg-[radial-gradient(circle,_rgba(221,214,254,0.22)_0%,_rgba(255,255,255,0)_68%)]" />
+
+      <section className="relative w-full max-w-[28rem]">
+        <p className="mb-5 flex items-center gap-2 text-xs font-semibold tracking-[0.08em] text-violet-600">
+          <span className="size-1.5 rounded-full bg-violet-600" />
+          ASÍ SE VE EN VIVO
+        </p>
+
+        <h1 className="text-4xl font-bold leading-[1.08] tracking-[-0.04em] text-neutral-950 sm:text-5xl">
+          Tu sitio empieza acá<span className="ml-1 inline-block h-10 w-0.5 translate-y-1 animate-pulse bg-violet-600 sm:h-12" aria-hidden="true" />
+        </h1>
+        <p className="mt-5 max-w-[30ch] text-base leading-6 text-neutral-500">
+          Contale al chat qué querés construir y esta pantalla se va armando en vivo, a medida que escribís.
+        </p>
+
+        <div className="mt-8 rounded-xl border border-neutral-200 bg-white p-5 shadow-[0_16px_40px_-28px_rgba(76,29,149,0.28)] sm:p-6">
+          <div className="space-y-3">
+            <span className="block h-2 w-3/5 rounded-full bg-violet-100" />
+            <span className="block h-2 w-full rounded-full bg-violet-100" />
+            <span className="block h-2 w-3/5 rounded-full bg-violet-200" />
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <button className="rounded-lg bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800">
+              Botón de ejemplo
+            </button>
+            <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-600">
+              Ejemplo
+            </span>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
@@ -332,5 +388,11 @@ export default function App() {
  * Los starters son el piso: lo guardado en `ProjectFile` pisa lo que exista.
  */
 export function withStarterFiles(saved: Record<string, string>): Record<string, string> {
-  return { ...STARTER_FILES, ...saved };
+  const files = { ...STARTER_FILES, ...saved };
+
+  // Vite ESM crea vite.config.js.timestamp-*.mjs en Nodebox y ese archivo
+  // temporal falla al leerse. La config CJS evita ese camino del loader.
+  delete files["/vite.config.js"];
+
+  return files;
 }

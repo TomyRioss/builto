@@ -53,7 +53,11 @@ export default async function DeveloperWorkspacePage({ params }: WorkspacePagePr
         </div>
       </header>
 
-      <DeveloperWorkspace projectId={workspace.project.id} initialFiles={files} />
+      <DeveloperWorkspace
+        projectId={workspace.project.id}
+        projectName={workspace.project.name}
+        initialFiles={files}
+      />
     </div>
   );
 }

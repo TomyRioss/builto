@@ -8,6 +8,7 @@ import {
   LuFileText,
   LuEye,
   LuRefreshCw,
+  LuSend,
   LuTicket,
 } from "react-icons/lu";
 
@@ -43,6 +44,7 @@ const dateFmt = new Intl.DateTimeFormat("es-AR", {
 });
 
 const dateTimeFmt = new Intl.DateTimeFormat("es-AR", {
+  timeZone: "America/Argentina/Buenos_Aires",
   day: "2-digit",
   month: "short",
   year: "numeric",
@@ -455,6 +457,20 @@ export default async function TicketDetailPage({
                 </dd>
               </div>
             </dl>
+          </section>
+
+          <section className="rounded-lg border border-[#e1e3e4] bg-[#ffffff] p-6">
+            <h2 className="text-[11px] font-semibold uppercase leading-4 tracking-[0.05em] text-[#7e7576]">
+              Mensajes
+            </h2>
+            <p className="mt-2 text-sm leading-5 text-[#4c4546]">Chateá directo con el equipo del proyecto.</p>
+            <Link
+              href={`/dashboard/tickets/${ticket.id}/chat`}
+              className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded border border-black px-4 text-sm font-medium transition-colors hover:bg-black hover:text-white"
+            >
+              <LuSend className="size-4" aria-hidden />
+              Preguntar detalles
+            </Link>
           </section>
 
           <section className="rounded-lg border border-[#e1e3e4] bg-[#ffffff] p-6 lg:sticky lg:top-8">

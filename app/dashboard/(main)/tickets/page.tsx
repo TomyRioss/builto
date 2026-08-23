@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LuCircleAlert, LuTicket, LuCircleCheck, LuFolder } from "react-icons/lu";
+import { LuCircleAlert, LuTicket, LuCircleCheck, LuFolder, LuSearch, LuFilter } from "react-icons/lu";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -35,13 +35,20 @@ const dateFmt = new Intl.DateTimeFormat("es-AR", {
   year: "numeric",
 });
 
-export default async function TicketsPage() {
+function param(value: string | string[] | undefined) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+export default async function TicketsPage({ searchParams }: PageProps<"/dashboard/tickets">) {
   const session = await auth();
 
   if (!session?.user) redirect("/login");
 
   const staff = isStaff(session.user.role);
   const userId = session.user.id;
+  const params = await searchParams;
+  const q = param(params.q);
+  const statusFilter = param(params.status) as TicketStatus | "";
 
   let tickets;
   let projects;
@@ -49,7 +56,11 @@ export default async function TicketsPage() {
     [tickets, projects] = await Promise.all([
       prisma.ticket.findMany({
         // Staff ve todos los tickets abiertos; un USER solo los propios.
-        where: staff ? undefined : { createdById: userId },
+        where: {
+          ...(staff ? {} : { createdById: userId }),
+          ...(statusFilter ? { status: statusFilter } : {}),
+          ...(q ? { OR: [{ title: { contains: q, mode: "insensitive" } }, { project: { name: { contains: q, mode: "insensitive" } } }] } : {}),
+        },
         orderBy: { createdAt: "desc" },
         take: 100,
         select: {
@@ -132,7 +143,7 @@ export default async function TicketsPage() {
           <p className="mt-2 text-sm leading-5 text-[#4c4546]">
             {staff
               ? "Todos los tickets abiertos en la plataforma."
-              : "Los tickets que abriste y su estado."}
+              : "Visualiza su estado."}
           </p>
         </div>
 
@@ -147,6 +158,32 @@ export default async function TicketsPage() {
           </Link>
         )}
       </div>
+
+      <form className="mt-8 grid gap-3 border-y border-[#f3f4f5] py-4 sm:grid-cols-[1fr_12rem_auto]">
+        <label className="relative">
+          <LuSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#7e7576]" aria-hidden />
+          <span className="sr-only">Buscar</span>
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Buscar por titulo o proyecto"
+            className="h-11 w-full rounded-md border border-[#d9dadb] pl-10 pr-3 text-sm"
+          />
+        </label>
+        <label>
+          <span className="sr-only">Estado</span>
+          <select name="status" defaultValue={statusFilter} className="h-11 w-full rounded-md border border-[#d9dadb] bg-white px-3 text-sm">
+            <option value="">Todos los estados</option>
+            {Object.entries(STATUS).map(([value, { label }]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </label>
+        <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-black px-5 text-sm font-medium text-white">
+          <LuFilter className="size-4" aria-hidden />
+          Filtrar
+        </button>
+      </form>
 
       <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-[#f3f4f5] bg-[#ffffff] p-6">

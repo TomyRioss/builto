@@ -3,13 +3,15 @@ import { Menu } from "lucide-react";
 
 import logo from "@/public/logotext.png";
 import { ButtonLink } from "@/components/landing/button-link";
+import { FadeIn } from "@/components/landing/fade-in";
 
-const navLinks = [{ label: "Características", href: "#caracteristicas" }, { label: "Plantillas", href: "#plantillas" }, { label: "Demo", href: "#demo" }];
+const navLinks = [{ label: "¿Cómo funciona?", href: "#caracteristicas" }, { label: "Plantillas", href: "#plantillas" }, { label: "Demo", href: "#demo" }];
 
 export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-[#e1e3e4] bg-[#f8f9fa]/95 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-10">
+      <FadeIn delay={0.1} y={-14}>
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-10">
         <a href="#" aria-label="Builto, inicio" className="focus-visible:outline-2 focus-visible:outline-offset-4"><Image src={logo} alt="Builto" priority className="h-11 w-auto md:h-12" /></a>
         <nav aria-label="Navegación principal" className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => <a key={link.href} href={link.href} className="text-xs font-semibold uppercase tracking-[0.12em] text-[#4c4546] transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-offset-4">{link.label}</a>)}
@@ -26,6 +28,7 @@ export function Navbar() {
           </nav>
         </details>
       </div>
+      </FadeIn>
     </header>
   );
 }

@@ -11,6 +11,7 @@ import { useBuilderStream, type ChatEntry } from "./useBuilderStream";
 type Props = {
   conversationId: string;
   projectId: string;
+  projectName: string;
   initialMessages: ChatEntry[];
   initialFiles: Record<string, string>;
   returnTo?: string | null;
@@ -19,6 +20,7 @@ type Props = {
 export function BuilderWorkspace({
   conversationId,
   projectId,
+  projectName,
   initialMessages,
   initialFiles,
   returnTo = null,
@@ -26,10 +28,10 @@ export function BuilderWorkspace({
   const [mobilePane, setMobilePane] = useState<"chat" | "preview">("chat");
   const previewSlotRef = useRef<HTMLDivElement>(null);
 
-  const { messages, files, streamingProse, writingPath, isStreaming, send } =
+  const { messages, files, streamingProse, writingPath, isStreaming, isFixing, send } =
     useBuilderStream({ conversationId, initialMessages, initialFiles });
 
-  const setPortalTarget = useBuilderPreview({ projectId, files, writingPath, isStreaming });
+  const setPortalTarget = useBuilderPreview({ projectId, projectName, files, writingPath, isStreaming });
 
   useEffect(() => {
     setPortalTarget(previewSlotRef.current);
@@ -37,7 +39,7 @@ export function BuilderWorkspace({
   }, [setPortalTarget]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       {returnTo && <div className="flex shrink-0 items-center justify-between gap-4 border-b border-[#c9caff] bg-[#fafaff] px-4 py-2.5 md:px-6"><div className="min-w-0"><p className="truncate text-sm font-medium text-[#4648d4]">Ajustando la entrega con IA</p><p className="hidden text-xs text-[#666768] sm:block">Los cambios se aplican al mismo proyecto y el ticket continua en revision.</p></div><Link href={returnTo} className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#4648d4] px-4 text-sm font-medium text-white"><LuArrowLeft className="size-4" />Volver a la revision</Link></div>}
       {/* Solo el conmutador de panel, y solo en mobile: en desktop chat y
           preview conviven, no hace falta barra. */}
@@ -66,6 +68,11 @@ export function BuilderWorkspace({
             messages={messages}
             streamingProse={streamingProse}
             isStreaming={isStreaming}
+            writingPath={writingPath}
+            isFixing={isFixing}
+            files={files}
+            projectId={projectId}
+            projectName={projectName}
             onSend={send}
           />
         </div>

@@ -4,13 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { parseReply } from "@/lib/builder/protocol";
+import { CONTINUE_MARKER, parseReply } from "@/lib/builder/protocol";
 
 export type ChatEntry = {
   id: string;
   kind: "USER" | "AI";
   body: string;
   images?: string[];
+  suggestTicket?: boolean;
 };
 
 /** Cada cuanto se re-parsea el stream. Menos que esto solo quema renders. */
@@ -33,6 +34,7 @@ export function useBuilderStream({
   const [streamingProse, setStreamingProse] = useState("");
   const [writingPath, setWritingPath] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isFixing, setIsFixing] = useState(false);
 
   const rawRef = useRef("");
   const flushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,11 +86,15 @@ export function useBuilderStream({
       rawRef.current = "";
       setStreamingProse("");
       setWritingPath(null);
+      setIsFixing(false);
       setIsStreaming(true);
       setMessages((prev) => [
         ...prev,
         { id: `local-${Date.now()}`, kind: "USER", body: text, images },
       ]);
+
+      const startedAt = performance.now();
+      let firstChunkAt: number | null = null;
 
       try {
         const response = await fetch(`/api/builder/${conversationId}`, {
@@ -108,7 +114,14 @@ export function useBuilderStream({
           const { done, value } = await reader.read();
           if (done) break;
 
-          rawRef.current += value;
+          firstChunkAt ??= performance.now();
+
+          if (value.includes(CONTINUE_MARKER)) {
+            setIsFixing(true);
+            rawRef.current += value.split(CONTINUE_MARKER).join("");
+          } else {
+            rawRef.current += value;
+          }
           scheduleFlush();
         }
 
@@ -117,6 +130,12 @@ export function useBuilderStream({
           flushRef.current = null;
         }
         flush();
+        console.info("[builder] respuesta recibida", {
+          conversationId,
+          firstChunkMs: firstChunkAt === null ? null : Math.round(firstChunkAt - startedAt),
+          streamMs: Math.round(performance.now() - startedAt),
+          receivedChars: rawRef.current.length,
+        });
       } catch (error) {
         console.warn("[builder] fallo el turno de la IA", {
           conversationId,
@@ -130,6 +149,7 @@ export function useBuilderStream({
         setIsStreaming(false);
         setStreamingProse("");
         setWritingPath(null);
+        setIsFixing(false);
         rawRef.current = "";
         // Trae de la DB el mensaje de la IA y los archivos ya persistidos.
         router.refresh();
@@ -144,6 +164,7 @@ export function useBuilderStream({
     streamingProse,
     writingPath,
     isStreaming,
+    isFixing,
     send,
   };
 }
