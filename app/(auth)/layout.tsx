@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import logo from "@/public/logotext.png";
+import logo from "@/public/logotext-white.png";
 
 export default function AuthLayout(props: { children: React.ReactNode }) {
   return (
