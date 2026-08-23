@@ -16,13 +16,19 @@ export default auth((req) => {
   }
 
   // El panel interno es grupo cerrado: DEV, ADMIN y OWNER.
-  if (pathname.startsWith("/admin") && !STAFF_ROLES.has(user.role)) {
+  if ((pathname.startsWith("/admin") || pathname.startsWith("/dev")) && !STAFF_ROLES.has(user.role)) {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+  }
+
+  // El dashboard general pertenece al cliente. Un DEV trabaja exclusivamente
+  // dentro de su espacio y tampoco puede entrar escribiendo la URL a mano.
+  if (pathname.startsWith("/dashboard") && user.role === "DEV") {
+    return NextResponse.redirect(new URL("/dev/dashboard", req.nextUrl));
   }
 
   return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/dev/:path*"],
 };

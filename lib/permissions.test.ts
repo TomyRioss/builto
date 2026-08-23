@@ -8,7 +8,7 @@ import {
   canQuote,
   canSeeTransactions,
   isStaff,
-} from "./permissions";
+} from "./permissions.ts";
 
 test("un USER no accede a nada del panel interno", () => {
   assert.equal(isStaff("USER"), false);
